@@ -1,0 +1,17 @@
+x-arcane:
+  icon: ${SELFHST_WEBP}/dockhand.webp
+services:
+  dockhand:
+    container_name: dockhand
+    image: fnsys/dockhand:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockhand_data:/app/data
+      - /app/data/projects:/app/data/projects
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/dockhand.webp
+volumes:
+  dockhand_data:

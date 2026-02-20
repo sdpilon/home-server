@@ -1,0 +1,24 @@
+x-arcane:
+  icon: ${SELFHST_WEBP}/arcane.webp
+services:
+  arcane:
+    container_name: arcane
+    image: ghcr.io/getarcaneapp/arcane:latest
+    env_file: .env
+    restart: unless-stopped
+    ports:
+      - '3552:3552'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - appdata:/app/data
+      - /app/data/projects:/app/data/projects
+    environment:
+      - APP_URL=http://localhost:3552
+      - PUID=1000
+      - PGID=1000
+      - ENCRYPTION_KEY=${ARCANE_ENCRYPTION_KEY}
+      - JWT_SECRET=${ARCANE_JWT_SECRET}
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/arcane.webp
+volumes:
+  appdata:

@@ -1,0 +1,132 @@
+name: servarr
+x-arcane:
+  icon: ${SELFHST_WEBP}/servarr.webp
+
+###############################################
+# Common Keys for all apps
+###############################################
+
+x-common-keys: &common-keys
+    restart: unless-stopped
+    logging:
+      driver: json-file
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: ${TZ}
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+
+services:
+
+###############################################
+# RADARR - Movies
+###############################################
+  radarr:
+    <<: *common-keys
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/radarr.webp
+    container_name: radarr
+    image: ghcr.io/hotio/radarr:latest
+    ports:
+      - 7878:7878
+    volumes:
+      - /etc/localtime:/etc/localtime:ro #read-only
+      - /docker/appdata/radarr:/config
+      - /data:/data
+
+###############################################
+# SONARR - TV Shows
+###############################################
+  sonarr:
+    <<: *common-keys
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/sonarr.webp
+    container_name: sonarr
+    image: ghcr.io/hotio/sonarr:latest
+    ports:
+      - 8989:8989
+    volumes:
+      - /etc/localtime:/etc/localtime:ro #read-only
+      - /docker/appdata/sonarr:/config
+      - /data:/data
+
+###############################################
+# LIDARR - Music
+###############################################
+  lidarr:
+    <<: *common-keys
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/lidarr.webp
+    container_name: lidarr
+    image: ghcr.io/hotio/lidarr:latest
+    ports:
+      - 8686:8686
+    volumes:
+      - /etc/localtime:/etc/localtime:ro #read-only
+      - /docker/appdata/lidarr:/config
+      - /data:/data
+
+###############################################
+# BAZARR - Subtitles
+###############################################
+  bazarr:
+    <<: *common-keys
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/bazarr.webp
+    container_name: bazarr
+    image: ghcr.io/hotio/bazarr:latest
+    ports:
+      - 6767:6767
+    volumes:
+      - /etc/localtime:/etc/localtime:ro #read-only
+      - /docker/appdata/bazarr:/config
+      - /data/media:/data/media
+
+###############################################
+# PROWLARR - Indexer Manager
+###############################################
+  prowlarr:
+    <<: *common-keys
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/prowlarr.webp
+    container_name: prowlarr
+    image: ghcr.io/hotio/prowlarr:latest
+    ports:
+      - 9696:9696
+    volumes:
+      - /etc/localtime:/etc/localtime:ro #read-only
+      - /docker/appdata/prowlarr:/config
+
+###############################################
+# QBITTORRENT - Downloader
+###############################################
+  qbittorrent:
+    <<: *common-keys
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/qbittorrent.webp
+    container_name: qbittorrent
+    image: ghcr.io/hotio/qbittorrent:latest
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    environment:
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - /etc/localtime:/etc/localtime:ro #read-only
+      - /docker/appdata/qbittorrent:/config
+      - /data:/data
+
+###############################################
+# ARR Stack Dedicated Network
+###############################################
+
+networks:
+  default:
+    name: arr_network
+
+###############################################
+###############################################
