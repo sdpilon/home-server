@@ -1,0 +1,11 @@
+x-arcane:
+  icon: ${SELFHST_WEBP}/omnitools.webp
+services:
+  omni-tools:
+    container_name: omni-tools
+    image: iib0011/omni-tools:latest
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/omnitools.webp

@@ -1,0 +1,16 @@
+x-arcane:
+  icon: ${SELFHST_WEBP}/homepage.webp
+services:
+  homepage:
+    labels:
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/homepage.webp
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    restart: unless-stopped
+    ports:
+      - 3001:3000
+    volumes:
+      - ./config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: homepage.REDACTED_DOMAIN_1,'docker.REDACTED_DOMAIN_2:3001','192.168.20.4:3001'
