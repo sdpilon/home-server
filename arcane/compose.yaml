@@ -1,5 +1,8 @@
 x-arcane:
   icon: ${SELFHST_WEBP}/arcane.webp
+networks:
+  proxy:
+    external: true
 services:
   arcane:
     container_name: arcane
@@ -18,7 +21,15 @@ services:
       - PGID=1000
       - ENCRYPTION_KEY=${ARCANE_ENCRYPTION_KEY}
       - JWT_SECRET=${ARCANE_JWT_SECRET}
+    networks:
+      - proxy
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/arcane.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/arcane.webp
+      - "traefik.enable=true"
+      - "traefik.http.routers.arcane.entrypoints=https"  # Changed from websecure
+      - "traefik.http.routers.arcane.rule=Host(`arcane.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.arcane.tls=true"
+      - "traefik.http.routers.arcane.tls.certresolver=cloudflare"
+      - "traefik.http.services.arcane.loadbalancer.server.port=3552"
 volumes:
   appdata:

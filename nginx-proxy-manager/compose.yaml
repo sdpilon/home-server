@@ -1,5 +1,5 @@
 x-arcane:
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/nginx-proxy-manager.webp
+  icon: ${SELFHST_WEBP}/nginx-proxy-manager.webp
 services:
   app:
     image: 'jc21/nginx-proxy-manager:latest'
@@ -28,7 +28,7 @@ services:
       interval: 10s
       timeout: 3s
     labels:
-      com.getarcaneapp.arcane.icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/nginx-proxy-manager.webp
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/nginx-proxy-manager.webp
 
   db:
     image: 'jc21/mariadb-aria:latest'
@@ -43,7 +43,7 @@ services:
     volumes:
       - npm_db:/var/lib/mysql
     labels:
-      com.getarcaneapp.arcane.icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/mariadb.webp
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/mariadb.webp
 
 networks:
   default:

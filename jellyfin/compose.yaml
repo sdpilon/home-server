@@ -1,5 +1,8 @@
 x-arcane:
-  icon: ${SELFHST_ICONS}/jellyfin.webp
+  icon: ${SELFHST_WEBP}/jellyfin.webp
+networks:
+  proxy:
+    external: true
 services:
   jellyfin:
     container_name: jellyfin
@@ -14,9 +17,19 @@ services:
       TZ: ${TZ}
     ports:
       - 8096:8096
+      - 8920:8920
+    networks:
+      - proxy
     volumes:
       - /etc/localtime:/etc/localtime:ro #read-only
       - /docker/appdata/jellyfin:/config
       - /data/media:/data/media:ro #read-only
+      - /data/metadata:/data/metadata
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_ICONS}/jellyfin.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/jellyfin.webp
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.entrypoints=https"  # Changed from websecure
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.jellyfin.tls=true"
+      - "traefik.http.routers.jellyfin.tls.certresolver=cloudflare"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"

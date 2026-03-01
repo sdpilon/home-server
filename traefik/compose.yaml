@@ -6,57 +6,50 @@ services:
     container_name: traefik
     restart: unless-stopped
     security_opt:
-      - "no-new-privileges:true"
+      - no-new-privileges:true
     networks:
       - proxy
     ports:
       - 80:80
       - 443:443
-    command:
-      # EntryPoints
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.websecure.http.tls=true"
-      # Attach the static configuration tls.yaml file that contains the tls configuration settings
-      - "--providers.file.filename=/dynamic/tls.yaml"
-      # Providers 
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy"
-      # API & Dashboard 
-      - "--api.dashboard=true"
-      - "--api.insecure=false"
-      # Observability 
-      - "--log.level=INFO"
-      - "--accesslog=true"
-      - "--metrics.prometheus=true"
-      - "--certificatesresolvers.le.acme.email=REDACTED_EMAIL"
-      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json" # Path inside container volume
-      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
-      # - "--certificatesresolvers.le.acme.dnschallenge.provider=your-dns-provider" # Needs provider setup
-      # Optionally make 'le' the default resolver for TLS-enabled routers
-      - "--entrypoints.websecure.http.tls.certresolver=le"
+    environment:
+      CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token # note using _FILE for docker secrets
+      # CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN} # if using .env
+      TRAEFIK_DASHBOARD_CREDENTIALS: ${TRAEFIK_DASHBOARD_CREDENTIALS}
+    secrets:
+      - cf_api_token
+    env_file: .env # use .env
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/certs:ro
-      - ./dynamic:/dynamic:ro
-      - letsencrypt:/letsencrypt/acme.json
+      - ./data/traefik.yml:/traefik.yml:ro
+      - ./data/acme.json:/acme.json
+      - ./data/dynamic.yml:/dynamic.yml:ro
+      - ./logs:/var/log/traefik
     labels:
-      - "com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/traefik.webp"
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.tls=true"
-      - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$apr1$$jxiV5iUB$$V1UQBjeSAmPyRwhWs0pHy1"
-      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=vm1.REDACTED_DOMAIN_1"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.vm1.REDACTED_DOMAIN_1"
+      - "traefik.http.routers.traefik-secure.tls.domains[1].main=REDACTED_DOMAIN_1"
+      - "traefik.http.routers.traefik-secure.tls.domains[1].sans=*.REDACTED_DOMAIN_1"
+      - "traefik.http.routers.traefik-secure.tls.domains[2].main=zimablade.REDACTED_DOMAIN_1"
+      - "traefik.http.routers.traefik-secure.tls.domains[2].sans=*.zimablade.REDACTED_DOMAIN_1"
+secrets:
+  cf_api_token:
+    file: ./cf_api_token.txt
 
 networks:
   proxy:
     external: true
-
-volumes:
-  letsencrypt:

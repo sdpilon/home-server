@@ -7,11 +7,22 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    networks:
+      - proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - dockhand_data:/app/data
+      - appdata:/app/data
       - /app/data/projects:/app/data/projects
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/dockhand.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/dockhand.webp
+      - "traefik.enable=true"
+      - "traefik.http.routers.dockhand.entrypoints=https"  # Changed from websecure
+      - "traefik.http.routers.dockhand.rule=Host(`dockhand.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.dockhand.tls=true"
+      - "traefik.http.routers.dockhand.tls.certresolver=cloudflare"
+      - "traefik.http.services.dockhand.loadbalancer.server.port=3000"
 volumes:
-  dockhand_data:
+  appdata:
+networks:
+  proxy:
+    external: true

@@ -1,11 +1,22 @@
 x-arcane:
   icon: ${SELFHST_WEBP}/omnitools.webp
+networks:
+  proxy:
+    external: true
 services:
   omni-tools:
     container_name: omni-tools
     image: iib0011/omni-tools:latest
     restart: unless-stopped
-    ports:
-      - "8081:80"
+    # ports:
+    #   - "8081:80"
+    networks:
+      - proxy
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/omnitools.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/omnitools.webp
+      - "traefik.enable=true"
+      - "traefik.http.routers.omnitools.entrypoints=https"  # Changed from websecure
+      - "traefik.http.routers.omnitools.rule=Host(`omnitools.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.omnitools.tls=true"
+      - "traefik.http.routers.omnitools.tls.certresolver=cloudflare"
+      - "traefik.http.services.omnitools.loadbalancer.server.port=80"
