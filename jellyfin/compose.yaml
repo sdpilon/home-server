@@ -1,5 +1,7 @@
 x-arcane:
   icon: ${SELFHST_WEBP}/jellyfin.webp
+  urls:
+    - https://jellyfin.vm1.REDACTED_DOMAIN_1
 networks:
   proxy:
     external: true
@@ -14,7 +16,6 @@ services:
     environment:
       PUID: 1000
       PGID: 1000
-      TZ: ${TZ}
     ports:
       - 8096:8096
       - 8920:8920
