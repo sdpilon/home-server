@@ -1,22 +1,19 @@
 x-arcane:
-  icon: ${SELFHST_WEBP}/immich.webp
-
-x-common-keys: &common-keys
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-
+  icon: ${SELFHST_WEBP:-missing icon source}/immich.webp
+  urls:
+    - https://immich.vm1.REDACTED_DOMAIN_1
 services:
   application:
-    <<: *common-keys
+    restart: unless-stopped
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
-    container_name: app-${SERVICE}-server
+    container_name: ${STACK}-server
     networks:
       - default  # For talking to redis/postgres
       - proxy    # For Traefik
     volumes:
-      - upload:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
+      - upload:/usr/src/app/upload
+      - appdata:/data
     ports:
       - 2283:2283
     env_file: .env
@@ -26,7 +23,7 @@ services:
       database:
         condition: service_healthy
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/immich.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing icon source}/immich.webp
       - "traefik.enable=true"
       - "traefik.http.routers.immich.entrypoints=https"
       - "traefik.http.routers.immich.rule=Host(`immich.vm1.REDACTED_DOMAIN_1`)"
@@ -35,31 +32,31 @@ services:
       - "traefik.http.services.immich.loadbalancer.server.port=2283"
 
   machine-learning:
-    <<: *common-keys
+    restart: unless-stopped
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/immich.webp
-    container_name: app-${SERVICE}-machine-learning
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP:-missing icon source}/immich.webp
+    container_name: ${STACK}-machine-learning
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
     volumes:
       - immich_mlmodels:/cache
     env_file: .env
 
   redis:
-    <<: *common-keys
+    restart: unless-stopped
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/redis.webp
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP:-missing icon source}/redis.webp
     volumes:
       - redis:/data
-    container_name: app-${SERVICE}-redis
+    container_name: ${STACK}-redis
     image: docker.io/valkey/valkey:8-bookworm@sha256:fec42f399876eb6faf9e008570597741c87ff7662a54185593e74b09ce83d177
     healthcheck:
       test: redis-cli ping || exit 1
 
   database:
-    <<: *common-keys
+    restart: unless-stopped
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP}/postgresql.webp
-    container_name: app-${SERVICE}-postgres
+      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP:-missing icon source}/postgresql.webp
+    container_name: ${STACK}-postgres
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -87,3 +84,4 @@ volumes:
   immich_mlmodels:
     external: true
   redis:
+  appdata:
