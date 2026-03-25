@@ -1,5 +1,7 @@
 x-arcane:
   icon: ${SELFHST_WEBP}/dockhand.webp
+  urls:
+    - https://dockhand.vm1.REDACTED_DOMAIN_1
 services:
   dockhand:
     container_name: dockhand
