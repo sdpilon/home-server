@@ -1,8 +1,10 @@
+x-arcane:
+  # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
+  icon: ${SELFHST_WEBP:-missing icon source}/authentik.webp
 services:
-
   postgresql:
-    env_file:
-    - .env
+    container_name: ${STACK}-postgresql
+    env_file: .env
     environment:
       POSTGRES_DB: ${PG_DB:-authentik}
       POSTGRES_PASSWORD: ${PG_PASS:?database password required}
@@ -21,8 +23,11 @@ services:
     - database:/var/lib/postgresql/data
     networks:
     - authentik
+    labels:
+    - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing icon source}/postgresql.webp
 
   server:
+    container_name: ${STACK}-server
     command: server
     depends_on:
       postgresql:
@@ -36,9 +41,6 @@ services:
       AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2}
-    # ports:
-    # - ${COMPOSE_PORT_HTTP:-9000}:9000
-    # - ${COMPOSE_PORT_HTTPS:-9443}:9443
     restart: unless-stopped
     shm_size: 512mb
     volumes:
@@ -48,6 +50,7 @@ services:
     - authentik
     - proxy
     labels:
+    - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing icon source}/authentik.webp
     - "traefik.enable=true"
     - "traefik.docker.network=proxy"
     - "traefik.http.routers.authentik.entrypoints=https"
@@ -57,6 +60,7 @@ services:
     - "traefik.http.services.authentik.loadbalancer.server.port=9000"
 
   worker:
+    container_name: ${STACK}-worker
     command: worker
     depends_on:
       postgresql:
@@ -80,6 +84,8 @@ services:
     - ./custom-templates:/templates
     networks:
     - authentik
+    labels:
+    - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing icon source}/authentik.webp
 
 volumes:
   database:
