@@ -1,9 +1,11 @@
 x-arcane:
-  icon: ${SELFHST_WEBP}/traefik.webp
+  icon: ${SELFHST_WEBP:-missing icon source}/traefik.webp
+  urls:
+    - traefik.vm1.REDACTED_DOMAIN_1
 services:
   traefik:
     image: traefik:v3.6
-    container_name: traefik
+    container_name: ${STACK}
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -14,29 +16,26 @@ services:
       - 443:443
     environment:
       CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token # note using _FILE for docker secrets
-      # CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN} # if using .env
-      TRAEFIK_DASHBOARD_CREDENTIALS: ${TRAEFIK_DASHBOARD_CREDENTIALS}
     secrets:
       - cf_api_token
-    env_file: .env # use .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./data/traefik.yml:/traefik.yml:ro
       - ./data/acme.json:/acme.json
-      - ./data/dynamic.yml:/dynamic.yml:ro
+      - ./data/dynamic:/dynamic:ro
       - ./logs:/var/log/traefik
     labels:
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
       - "traefik.http.routers.traefik.rule=Host(`traefik.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
       - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
       - "traefik.http.routers.traefik-secure.rule=Host(`traefik.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth@file"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"

@@ -8,6 +8,14 @@ http:
       tls:
         certResolver: cloudflare
 
+    proxmenux:
+      rule: "Host(`proxmenux.REDACTED_DOMAIN_1`)"
+      entryPoints:
+        - https
+      service: proxmenux
+      tls:
+        certResolver: cloudflare
+
     cockpit:
       rule: "Host(`cockpit.vm1.REDACTED_DOMAIN_1`)"
       entryPoints:
@@ -39,6 +47,11 @@ http:
         servers:
           - url: "https://pve.REDACTED_DOMAIN_2"
         serversTransport: insecure-transport
+
+    proxmenux:
+      loadBalancer:
+        servers:
+          - url: "http://pve.REDACTED_DOMAIN_2:8008"
 
     cockpit:
       loadBalancer:

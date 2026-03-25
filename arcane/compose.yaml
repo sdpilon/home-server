@@ -1,32 +1,36 @@
 x-arcane:
-  icon: ${SELFHST_WEBP}/arcane.webp
+  # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
+  icon: ${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
+  urls:
+    - arcane.vm1.REDACTED_DOMAIN_1
 networks:
   proxy:
     external: true
 services:
   arcane:
-    container_name: arcane
+    container_name: ${STACK:-arcane}
     image: ghcr.io/getarcaneapp/arcane:latest
-    env_file: .env
+    env_file:
+      - secrets.env
+      - .env
     restart: unless-stopped
     ports:
       - '3552:3552'
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - appdata:/app/data
       - /app/data/projects:/app/data/projects
+      - appdata:/app/data
     environment:
       - APP_URL=http://localhost:3552
       - PUID=1000
       - PGID=1000
-      - ENCRYPTION_KEY=${ARCANE_ENCRYPTION_KEY}
-      - JWT_SECRET=${ARCANE_JWT_SECRET}
     networks:
       - proxy
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/arcane.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
       - "traefik.enable=true"
-      - "traefik.http.routers.arcane.entrypoints=https"  # Changed from websecure
+      - "traefik.http.routers.arcane.entrypoints=https"
       - "traefik.http.routers.arcane.rule=Host(`arcane.vm1.REDACTED_DOMAIN_1`)"
       - "traefik.http.routers.arcane.tls=true"
       - "traefik.http.routers.arcane.tls.certresolver=cloudflare"

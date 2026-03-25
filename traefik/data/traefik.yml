@@ -20,8 +20,9 @@ providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
+    network: proxy
   file:
-    filename: /dynamic.yml
+    directory: /dynamic
     watch: true
 
 certificatesResolvers:
