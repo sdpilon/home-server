@@ -1,6 +1,6 @@
 x-arcane:
   # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
-  icon: ${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
+  icon: ${SELFHST_WEBP:-missing-icon-source}/arcane.webp
   urls:
     - arcane.vm1.REDACTED_DOMAIN_1
 networks:
@@ -8,11 +8,9 @@ networks:
     external: true
 services:
   arcane:
-    container_name: ${STACK:-arcane}
+    container_name: ${STACK}
     image: ghcr.io/getarcaneapp/arcane:latest
-    env_file:
-      - secrets.env
-      - .env
+    env_file: secrets.env
     restart: unless-stopped
     ports:
       - '3552:3552'
@@ -28,12 +26,12 @@ services:
     networks:
       - proxy
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK}.webp
       - "traefik.enable=true"
-      - "traefik.http.routers.arcane.entrypoints=https"
-      - "traefik.http.routers.arcane.rule=Host(`arcane.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.arcane.tls=true"
-      - "traefik.http.routers.arcane.tls.certresolver=cloudflare"
-      - "traefik.http.services.arcane.loadbalancer.server.port=3552"
+      - "traefik.http.routers.${STACK}.entrypoints=https"
+      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.${STACK}.tls=true"
+      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK}.loadbalancer.server.port=3552"
 volumes:
   appdata:
