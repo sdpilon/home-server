@@ -4,8 +4,8 @@ x-arcane:
     - https://dockhand.vm1.REDACTED_DOMAIN_1
 services:
   dockhand:
-    container_name: dockhand
     image: fnsys/dockhand:latest
+    container_name: ${STACK}
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -16,13 +16,13 @@ services:
       - appdata:/app/data
       - /app/data/projects:/app/data/projects
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/dockhand.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/${STACK}.webp
       - "traefik.enable=true"
-      - "traefik.http.routers.dockhand.entrypoints=https"  # Changed from websecure
-      - "traefik.http.routers.dockhand.rule=Host(`dockhand.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.dockhand.tls=true"
-      - "traefik.http.routers.dockhand.tls.certresolver=cloudflare"
-      - "traefik.http.services.dockhand.loadbalancer.server.port=3000"
+      - "traefik.http.routers.${STACK}.entrypoints=https"  # Changed from websecure
+      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.${STACK}.tls=true"
+      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK}.loadbalancer.server.port=3000"
 volumes:
   appdata:
 networks:
