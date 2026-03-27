@@ -1,0 +1,42 @@
+x-arcane:
+  # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/recipya.webp
+  urls:
+    - recipya.vm1.REDACTED_DOMAIN_1
+
+
+# Documentation for the environment variables: https://recipes.musicavis.ca/docs/installation/docker/#environment-variables
+services:
+  web:
+    image: reaper99/recipya:v1.2.2
+    container_name: ${STACK}
+    restart: unless-stopped
+    environment:
+      RECIPYA_DI_KEY: "KEY_1"
+      RECIPYA_DI_ENDPOINT: "https://{resource}.cognitiveservices.azure.com/"
+      RECIPYA_SERVER_AUTOLOGIN: false
+      RECIPYA_SERVER_IS_DEMO: false
+      RECIPYA_SERVER_IS_PROD: false
+      RECIPYA_SERVER_NO_SIGNUPS: false
+      RECIPYA_SERVER_PORT: 80
+      RECIPYA_SERVER_URL: "http://0.0.0.0"
+      UID: 1000
+      GID: 1000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - appdata:/root/.config/Recipya
+    networks:
+      - proxy
+    labels:
+      - com.getarcaneapp.arcane.icon=https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/recipya.webp
+      - "traefik.enable=true"
+      - "traefik.http.routers.${STACK}.entrypoints=https"
+      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.${STACK}.tls=true"
+      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK}.loadbalancer.server.port=80"
+volumes:
+  appdata:
+networks:
+  proxy:
+    external: true
