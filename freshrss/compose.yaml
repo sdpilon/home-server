@@ -1,0 +1,46 @@
+x-arcane:
+  # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
+  icon: ${SELFHST_WEBP:-missing-icon-source}/freshrss.webp
+  urls:
+    - freshrss.vm1.REDACTED_DOMAIN_1
+
+services:
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: ${STACK}
+    hostname: ${STACK}
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - data:/var/www/FreshRSS/data
+      - extensions:/var/www/FreshRSS/extensions
+    networks:
+      - proxy
+    environment:
+      CRON_MIN: '3,33'
+      TRUSTED_PROXY: 172.28.0.1/24 192.168.0.1/16
+    healthcheck:
+      test: ["CMD", "cli/health.php"]
+      timeout: 10s
+      start_period: 60s
+      start_interval: 11s
+      interval: 75s
+      retries: 3
+    labels:
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
+      - "traefik.enable=true"
+      - "traefik.http.routers.${STACK}.entrypoints=https"
+      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.${STACK}.tls=true"
+      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK}.loadbalancer.server.port=80"
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data:
+  extensions:
