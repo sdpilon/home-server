@@ -1,18 +1,18 @@
 x-arcane:
-  icon: ${SELFHST_WEBP:-}/tailscale-light.webp
+  icon: ${SELFHST_ICONS:-icon source missing}/webp/tailscale-light.webp
   urls:
     - https://github.com/tailscale/tsidp
+    - idp.REDACTED_DOMAIN_2
 services:
   server:
     container_name: tsidp
     image: ghcr.io/tailscale/tsidp:latest
     network_mode: host
     restart: unless-stopped
-    env_file: .env
     volumes:
       - tsidp:/data
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP:-}/tailscale-light.webp
+      com.getarcaneapp.arcane.icon: ${SELFHST_ICONS:-icon source missing}/webp/tailscale-light.webp
     environment:
       # tsidp is experimental - needed while version <1.0.0
       - TAILSCALE_USE_WIP_CODE=1 
@@ -23,7 +23,7 @@ services:
       # Enable OAuth token exchange
       - TSIDP_ENABLE_STS=1 
       # Optional: Tailscale auth key for automatic node registration
-      - TS_AUTHKEY=${TS_AUTHKEY} # tskey-auth-xxxxx
+      - TS_AUTHKEY=${TS_AUTHKEY:-tskey-auth-xxxxx} # tskey-auth-xxxxx
 volumes:
   tsidp:
     name: tsidp
