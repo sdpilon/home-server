@@ -2,17 +2,14 @@ x-arcane:
   icon: ${SELFHST_WEBP}/jellyfin.webp
   urls:
     - https://jellyfin.vm1.REDACTED_DOMAIN_1
-networks:
-  proxy:
-    external: true
+
 services:
   jellyfin:
-    container_name: jellyfin
     image: ghcr.io/hotio/jellyfin:latest
+    container_name: ${STACK}
     restart: unless-stopped
     logging:
       driver: json-file
-    env_file: .env
     environment:
       PUID: 1000
       PGID: 1000
@@ -23,14 +20,18 @@ services:
       - proxy
     volumes:
       - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/jellyfin:/config
       - /data/media:/data/media:ro #read-only
+      - /docker/appdata/${STACK}:/config
       - /data/metadata:/data/metadata
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/jellyfin.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/${STACK}.webp
       - "traefik.enable=true"
-      - "traefik.http.routers.jellyfin.entrypoints=https"  # Changed from websecure
-      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.jellyfin.tls=true"
-      - "traefik.http.routers.jellyfin.tls.certresolver=cloudflare"
-      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      - "traefik.http.routers.${STACK}.entrypoints=https"
+      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.${STACK}.tls=true"
+      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK}.loadbalancer.server.port=8096"
+
+networks:
+  proxy:
+    external: true
