@@ -1,14 +1,12 @@
-name: servarr
 x-arcane:
   icon: ${SELFHST_WEBP}/servarr.webp
   urls:
+    - qbittorrent.vm1.REDACTED_DOMAIN_1
+    - prowlarr.vm1.REDACTED_DOMAIN_1
     - radarr.vm1.REDACTED_DOMAIN_1
     - sonarr.vm1.REDACTED_DOMAIN_1
-    - lidarr.vm1.REDACTED_DOMAIN_1
     - bazarr.vm1.REDACTED_DOMAIN_1
-    - prowlarr.vm1.REDACTED_DOMAIN_1
-    - qbittorrent.vm1.REDACTED_DOMAIN_1
-    - qui.vm1.REDACTED_DOMAIN_1
+    - lidarr.vm1.REDACTED_DOMAIN_1
 
 # Common Keys for all apps
 x-common-keys: &common-keys
@@ -25,11 +23,79 @@ x-common-keys: &common-keys
     networks:
       - default  # Keeps it on arr_network
       - proxy    # Adds it to proxy network for Traefik
-    dns:
-      - 1.1.1.1
-      - 1.0.0.1
 
 services:
+
+# #############################################
+# # QBITTORRENT - Downloader OLDDDDDD
+# #############################################
+#   qbittorrent:
+#     <<: *common-keys
+#     image: ghcr.io/hotio/qbittorrent:latest
+#     labels:
+#       - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/qbittorrent.webp
+#     environment:
+#       - WEBUI_PORT=8080
+#       - TORRENTING_PORT=6881
+#     volumes:
+#       - /etc/localtime:/etc/localtime:ro #read-only
+#       - /docker/appdata/qbittorrent:/config
+#       - /data:/data
+
+#############################################
+# GLUETUN - VPN Gateway
+#############################################
+  gluetun:
+    image: qmcgaw/gluetun:v3.41
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    env_file: secrets.env
+    networks:
+      - default
+      - proxy
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - TZ=${TZ}
+    volumes:
+      - /docker/appdata/gluetun:/gluetun
+    ports:
+      # - 8080:8080        # qBittorrent WebUI
+      - 6881:6881        # torrent port
+      - 6881:6881/udp
+    restart: unless-stopped
+    labels:
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/gluetun.webp
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.qbittorrent.entrypoints=https"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN}`)"
+      - "traefik.http.routers.qbittorrent.tls=true"
+      - "traefik.http.routers.qbittorrent.tls.certresolver=cloudflare"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
+
+#############################################
+# QBITTORRENT (via VPN)
+#############################################
+  qbittorrent:
+    image: ghcr.io/hotio/qbittorrent:latest
+    network_mode: "service:gluetun"
+    environment:
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    labels:
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/qbittorrent.webp
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/qbittorrent:/config
+      - /data:/data
+    restart: unless-stopped
+
 #############################################
 # RADARR - Movies
 #############################################
@@ -40,9 +106,9 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
       - "traefik.http.routers.radarr.entrypoints=https"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)"
       - "traefik.http.routers.radarr.tls=true"
       - "traefik.http.routers.radarr.tls.certresolver=cloudflare"
-      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)"
       - "traefik.http.services.radarr.loadbalancer.server.port=7878"
       - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/radarr.webp
     volumes:
@@ -129,45 +195,22 @@ services:
       - /etc/localtime:/etc/localtime:ro #read-only
       - /docker/appdata/prowlarr:/config
 
-#############################################
-# QBITTORRENT - Downloader
-#############################################
-  qbittorrent:
-    <<: *common-keys
-    image: ghcr.io/hotio/qbittorrent:latest
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.qbittorrent.entrypoints=https"
-      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN}`)"
-      - "traefik.http.routers.qbittorrent.tls=true"
-      - "traefik.http.routers.qbittorrent.tls.certresolver=cloudflare"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/qbittorrent.webp
-    environment:
-      - WEBUI_PORT=8080
-      - TORRENTING_PORT=6881
-    volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/qbittorrent:/config
-      - /data:/data
-
-  qui:
-    <<: *common-keys
-    image: ghcr.io/autobrr/qui:latest
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.qui.entrypoints=https"
-      - "traefik.http.routers.qui.rule=Host(`qui.${DOMAIN}`)"
-      - "traefik.http.routers.qui.tls=true"
-      - "traefik.http.routers.qui.tls.certresolver=cloudflare"
-      - "traefik.http.services.qui.loadbalancer.server.port=7476"
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/qui.webp
-    volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/qui:/config
-      - /data:/data
+  # qui:
+  #   <<: *common-keys
+  #   image: ghcr.io/autobrr/qui:latest
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=proxy"
+  #     - "traefik.http.routers.qui.entrypoints=https"
+  #     - "traefik.http.routers.qui.rule=Host(`qui.${DOMAIN}`)"
+  #     - "traefik.http.routers.qui.tls=true"
+  #     - "traefik.http.routers.qui.tls.certresolver=cloudflare"
+  #     - "traefik.http.services.qui.loadbalancer.server.port=7476"
+  #     - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/qui.webp
+  #   volumes:
+  #     - /etc/localtime:/etc/localtime:ro #read-only
+  #     - /docker/appdata/qui:/config
+  #     - /data:/data
 
 #############################################
 # ARR Stack Dedicated Network
