@@ -4,3 +4,4 @@ logs/
 acme.json
 cf_api_token.txt
 servarr/.env
+.decomissioned/
