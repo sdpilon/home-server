@@ -1,0 +1,72 @@
+x-arcane:
+  # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
+  icon: ${SELFHST_WEBP:-missing-icon-source}/mealie.webp
+  urls:
+    - mealie.vm1.REDACTED_DOMAIN_1
+
+services:
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:v3.12.0
+    container_name: ${STACK}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1000M #
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - appdata:/app/data/
+    env_file: secrets.env
+    environment:
+      # Set Backend ENV Variables Here
+      ALLOW_SIGNUP: "false"
+      PUID: 1000
+      PGID: 1000
+      BASE_URL: https://${STACK}.vm1.REDACTED_DOMAIN_1
+      # Database Settings
+      DB_ENGINE: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+      - proxy
+    labels:
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
+      - "traefik.enable=true"
+      - "traefik.http.routers.${STACK}.entrypoints=https"
+      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
+      - "traefik.http.routers.${STACK}.tls=true"
+      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK}.loadbalancer.server.port=9000"
+
+  postgres:
+    container_name: ${STACK}-postgres
+    image: postgres:17
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - pgdata:/var/lib/postgresql/data
+    env_file: secrets.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      PGUSER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    labels:
+      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/postgresql.webp
+volumes:
+  pgdata:
+  appdata:
+networks:
+  default:
+  proxy:
+    external: true
