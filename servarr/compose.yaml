@@ -25,23 +25,6 @@ x-common-keys: &common-keys
       - proxy    # Adds it to proxy network for Traefik
 
 services:
-
-# #############################################
-# # QBITTORRENT - Downloader OLDDDDDD
-# #############################################
-#   qbittorrent:
-#     <<: *common-keys
-#     image: ghcr.io/hotio/qbittorrent:latest
-#     labels:
-#       - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/qbittorrent.webp
-#     environment:
-#       - WEBUI_PORT=8080
-#       - TORRENTING_PORT=6881
-#     volumes:
-#       - /etc/localtime:/etc/localtime:ro #read-only
-#       - /docker/appdata/qbittorrent:/config
-#       - /data:/data
-
 #############################################
 # GLUETUN - VPN Gateway
 #############################################
@@ -194,23 +177,6 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro #read-only
       - /docker/appdata/prowlarr:/config
-
-  # qui:
-  #   <<: *common-keys
-  #   image: ghcr.io/autobrr/qui:latest
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.docker.network=proxy"
-  #     - "traefik.http.routers.qui.entrypoints=https"
-  #     - "traefik.http.routers.qui.rule=Host(`qui.${DOMAIN}`)"
-  #     - "traefik.http.routers.qui.tls=true"
-  #     - "traefik.http.routers.qui.tls.certresolver=cloudflare"
-  #     - "traefik.http.services.qui.loadbalancer.server.port=7476"
-  #     - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/qui.webp
-  #   volumes:
-  #     - /etc/localtime:/etc/localtime:ro #read-only
-  #     - /docker/appdata/qui:/config
-  #     - /data:/data
 
 #############################################
 # ARR Stack Dedicated Network
