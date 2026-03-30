@@ -1,5 +1,5 @@
 x-arcane:
-  icon: ${SELFHST_WEBP:-missing icon source}/immich.webp
+  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/immich.webp
   urls:
     - https://immich.vm1.REDACTED_DOMAIN_1
 services:
@@ -23,7 +23,7 @@ services:
       database:
         condition: service_healthy
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing icon source}/immich.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/immich.webp
       - "traefik.enable=true"
       - "traefik.http.routers.immich.entrypoints=https"
       - "traefik.http.routers.immich.rule=Host(`immich.vm1.REDACTED_DOMAIN_1`)"
@@ -34,18 +34,20 @@ services:
   machine-learning:
     restart: unless-stopped
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP:-missing icon source}/immich.webp
+      com.getarcaneapp.arcane.icon: ${SELFHST_ICONS:-missing-icon-source}/webp/immich.webp
     container_name: ${STACK}-machine-learning
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - immich_mlmodels:/cache
     env_file: .env
 
   redis:
     restart: unless-stopped
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP:-missing icon source}/redis.webp
+      com.getarcaneapp.arcane.icon: ${SELFHST_ICONS:-missing-icon-source}/webp/redis.webp
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - redis:/data
     container_name: ${STACK}-redis
     image: docker.io/valkey/valkey:8-bookworm@sha256:fec42f399876eb6faf9e008570597741c87ff7662a54185593e74b09ce83d177
@@ -55,7 +57,7 @@ services:
   database:
     restart: unless-stopped
     labels:
-      com.getarcaneapp.arcane.icon: ${SELFHST_WEBP:-missing icon source}/postgresql.webp
+      com.getarcaneapp.arcane.icon: ${SELFHST_ICONS:-missing-icon-source}/webp/postgresql.webp
     container_name: ${STACK}-postgres
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
     environment:
@@ -64,6 +66,7 @@ services:
       POSTGRES_DB: ${DB_DATABASE_NAME}
       POSTGRES_INITDB_ARGS: '--data-checksums'
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - immich_pgdata:/var/lib/postgresql/data
 
 networks:

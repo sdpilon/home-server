@@ -12,6 +12,12 @@ entryPoints:
           scheme: https
   https:
     address: ":443"
+    # for immich to import a large file; maybe remove?
+    transport:
+      respondingTimeouts:
+        readTimeout: 600s
+        writeTimeout: 600s
+        idleTimeout: 600s
 
 serversTransport:
   insecureSkipVerify: true

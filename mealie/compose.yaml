@@ -1,6 +1,6 @@
 x-arcane:
   # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
-  icon: ${SELFHST_WEBP:-missing-icon-source}/mealie.webp
+  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/mealie.webp
   urls:
     - mealie.vm1.REDACTED_DOMAIN_1
 
@@ -36,7 +36,7 @@ services:
       - default
       - proxy
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/${STACK:-arcane}.webp
       - "traefik.enable=true"
       - "traefik.http.routers.${STACK}.entrypoints=https"
       - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
@@ -62,7 +62,7 @@ services:
       timeout: 20s
       retries: 3
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/postgresql.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/postgresql.webp
 volumes:
   pgdata:
   appdata:

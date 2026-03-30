@@ -1,5 +1,5 @@
 x-arcane:
-  icon: ${SELFHST_WEBP}/omnitools.webp
+  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/omnitools.webp
   urls:
     - omni-tools.vm1.REDACTED_DOMAIN_1
 services:
@@ -9,8 +9,10 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/omnitools.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/omnitools.webp
       - "traefik.enable=true"
       - "traefik.http.routers.${STACK}.entrypoints=https"
       - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"

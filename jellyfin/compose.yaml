@@ -1,5 +1,5 @@
 x-arcane:
-  icon: ${SELFHST_WEBP}/jellyfin.webp
+  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/jellyfin.webp
   urls:
     - https://jellyfin.vm1.REDACTED_DOMAIN_1
 
@@ -24,7 +24,7 @@ services:
       - /docker/appdata/${STACK}:/config
       - /data/metadata:/data/metadata
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP}/${STACK}.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/${STACK}.webp
       - "traefik.enable=true"
       - "traefik.http.routers.${STACK}.entrypoints=https"
       - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"

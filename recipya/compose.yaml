@@ -1,6 +1,5 @@
 x-arcane:
-  # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
-  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/recipya.webp
+  icon: ${HOMARR_ICONS:-missing-icon-source}/webp/recipya.webp
   urls:
     - recipya.vm1.REDACTED_DOMAIN_1
 
@@ -28,7 +27,7 @@ services:
     networks:
       - proxy
     labels:
-      - com.getarcaneapp.arcane.icon=https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/recipya.webp
+      - com.getarcaneapp.arcane.icon=${HOMARR_ICONS:-missing-icon-source}/webp/recipya.webp
       - "traefik.enable=true"
       - "traefik.http.routers.${STACK}.entrypoints=https"
       - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"

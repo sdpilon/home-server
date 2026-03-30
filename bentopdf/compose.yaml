@@ -1,5 +1,5 @@
 x-arcane:
-  icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/bentopdf.svg
+  icon: ${SELFHST_ICONS:-missing-icon-source}/svg/bentopdf.svg
   urls:
     - https://github.com/alam00000/bentopdf
     - bentopdf.vm1.REDACTED_DOMAIN_1
@@ -9,12 +9,14 @@ networks:
 services:
   bentopdf:
     image: ghcr.io/alam00000/bentopdf:latest
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     container_name: ${STACK}
     restart: unless-stopped
     networks:
       - proxy
     labels:
-      - com.getarcaneapp.arcane.icon=https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/${STACK}.svg
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/svg/${STACK}.svg
       - "traefik.enable=true"
       - "traefik.http.routers.${STACK}.entrypoints=https"
       - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"

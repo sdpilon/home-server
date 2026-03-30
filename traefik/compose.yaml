@@ -1,5 +1,5 @@
 x-arcane:
-  icon: ${SELFHST_WEBP:-missing icon source}/traefik.webp
+  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/traefik.webp
   urls:
     - traefik.vm1.REDACTED_DOMAIN_1
 services:
@@ -26,7 +26,7 @@ services:
       - ./data/dynamic:/dynamic:ro
       - ./logs:/var/log/traefik
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK:-arcane}.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/${STACK:-arcane}.webp
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
       - "traefik.http.routers.traefik.rule=Host(`traefik.vm1.REDACTED_DOMAIN_1`)"

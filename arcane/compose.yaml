@@ -1,6 +1,5 @@
 x-arcane:
-  # https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/
-  icon: ${SELFHST_WEBP:-missing-icon-source}/arcane.webp
+  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/arcane.webp
   urls:
     - arcane.vm1.REDACTED_DOMAIN_1
 networks:
@@ -26,7 +25,7 @@ services:
     networks:
       - proxy
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_WEBP:-missing-icon-source}/${STACK}.webp
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/${STACK}.webp
       - "traefik.enable=true"
       - "traefik.http.routers.${STACK}.entrypoints=https"
       - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
