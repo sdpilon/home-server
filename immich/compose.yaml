@@ -30,6 +30,8 @@ services:
       - "traefik.http.routers.immich.tls=true"
       - "traefik.http.routers.immich.tls.certresolver=cloudflare"
       - "traefik.http.services.immich.loadbalancer.server.port=2283"
+      - "traefik.http.routers.immich.middlewares=immich-buffering"
+      - "traefik.http.middlewares.immich-buffering.buffering.maxRequestBodyBytes=0"
 
   machine-learning:
     restart: unless-stopped
