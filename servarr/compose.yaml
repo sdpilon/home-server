@@ -40,10 +40,12 @@ services:
       - default
       - proxy
     environment:
+      - TZ=${TZ}
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
-      - TZ=${TZ}
+      - PORT_FORWARDING=on
     volumes:
+      - /docker/shared/gluetun:/tmp/gluetun
       - /docker/appdata/gluetun:/gluetun
     ports:
       # - 8080:8080        # qBittorrent WebUI
@@ -77,6 +79,7 @@ services:
       - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/qbittorrent.webp
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - /docker/shared/gluetun:/tmp/gluetun:ro
       - /docker/appdata/qbittorrent:/config
       - /data:/data
     restart: unless-stopped
