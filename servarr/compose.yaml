@@ -30,6 +30,7 @@ services:
 #############################################
   gluetun:
     image: qmcgaw/gluetun:v3.41
+    container_name: gluetun
     cap_add:
       - NET_ADMIN
     devices:
@@ -64,6 +65,7 @@ services:
 #############################################
   qbittorrent:
     image: ghcr.io/hotio/qbittorrent:latest
+    container_name: qbittorrent
     network_mode: "service:gluetun"
     environment:
       - WEBUI_PORT=8080
@@ -85,6 +87,7 @@ services:
   radarr:
     <<: *common-keys
     image: ghcr.io/hotio/radarr:latest
+    container_name: radarr
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
@@ -105,6 +108,7 @@ services:
   sonarr:
     <<: *common-keys
     image: ghcr.io/hotio/sonarr:latest
+    container_name: sonarr
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
@@ -125,6 +129,7 @@ services:
   lidarr:
     <<: *common-keys
     image: ghcr.io/hotio/lidarr:latest
+    container_name: lidarr
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
@@ -145,6 +150,7 @@ services:
   bazarr:
     <<: *common-keys
     image: ghcr.io/hotio/bazarr:latest
+    container_name: bazarr
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
@@ -165,6 +171,7 @@ services:
   prowlarr:
     <<: *common-keys
     image: ghcr.io/hotio/prowlarr:latest
+    container_name: prowlarr
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
