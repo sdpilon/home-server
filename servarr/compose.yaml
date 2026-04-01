@@ -2,9 +2,9 @@ x-arcane:
   icon: ${SELFHST_ICONS:-missing-icon-source}/webp/servarr.webp
   urls:
     - qbittorrent.vm1.REDACTED_DOMAIN_1
-    - prowlarr.vm1.REDACTED_DOMAIN_1
     - radarr.vm1.REDACTED_DOMAIN_1
     - sonarr.vm1.REDACTED_DOMAIN_1
+    - prowlarr.vm1.REDACTED_DOMAIN_1
     - bazarr.vm1.REDACTED_DOMAIN_1
     - lidarr.vm1.REDACTED_DOMAIN_1
 
@@ -31,11 +31,12 @@ services:
   gluetun:
     image: qmcgaw/gluetun:v3.41
     container_name: gluetun
+    restart: unless-stopped
+    env_file: secrets.env
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
-    env_file: secrets.env
     networks:
       - default
       - proxy
@@ -43,15 +44,15 @@ services:
       - TZ=${TZ}
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
-      - PORT_FORWARDING=on
+      - STREAM_ONLY=on
+      - PORT_FORWARD_ONLY=on
+      - VPN_PORT_FORWARDING=on
     volumes:
       - /docker/shared/gluetun:/tmp/gluetun
       - /docker/appdata/gluetun:/gluetun
     ports:
-      # - 8080:8080        # qBittorrent WebUI
       - 6881:6881        # torrent port
       - 6881:6881/udp
-    restart: unless-stopped
     labels:
       - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/gluetun.webp
       - "traefik.enable=true"
@@ -63,15 +64,15 @@ services:
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
 
 #############################################
-# QBITTORRENT (via VPN)
+# QBITTORRENT (via VPN) + Port Updater
 #############################################
   qbittorrent:
     image: ghcr.io/hotio/qbittorrent:latest
     container_name: qbittorrent
     network_mode: "service:gluetun"
+    restart: unless-stopped
     environment:
       - WEBUI_PORT=8080
-      - TORRENTING_PORT=6881
       - PUID=1000
       - PGID=1000
       - TZ=${TZ}
@@ -79,10 +80,26 @@ services:
       - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/qbittorrent.webp
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /docker/shared/gluetun:/tmp/gluetun:ro
       - /docker/appdata/qbittorrent:/config
       - /data:/data
+
+  qb-port-sync:
+    image: alpine:latest
+    container_name: qb-port-sync
+    network_mode: service:gluetun
     restart: unless-stopped
+    volumes:
+      - /docker/shared/gluetun:/tmp/gluetun:ro
+      - ./update-port.sh:/update-port.sh:ro
+    environment:
+      - TZ=${TZ}
+      - POLL_INTERVAL=30
+    labels:
+      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/alpine-linux.webp
+    depends_on:
+      - gluetun
+      - qbittorrent
+    command: ["sh", "/update-port.sh"]
 
 #############################################
 # RADARR - Movies
