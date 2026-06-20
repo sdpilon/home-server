@@ -1,0 +1,30 @@
+name: omnitools
+
+x-arcane:
+  # the icon slug isn't working (no svg found, I guess?)
+  icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/${COMPOSE_PROJECT_NAME}.webp
+  # icon: ${COMPOSE_PROJECT_NAME}
+  urls:
+    - ${COMPOSE_PROJECT_NAME}.${DOMAIN}
+
+networks:
+  proxy:
+    external: true
+
+services:
+  omnitools:
+    container_name: ${COMPOSE_PROJECT_NAME}
+    image: iib0011/omni-tools:latest
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - arcane.icon=https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/${COMPOSE_PROJECT_NAME}.webp
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80

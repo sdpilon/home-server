@@ -1,209 +1,41 @@
-x-arcane:
-  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/servarr.webp
-  urls:
-    - qbittorrent.vm1.REDACTED_DOMAIN_1
-    - radarr.vm1.REDACTED_DOMAIN_1
-    - sonarr.vm1.REDACTED_DOMAIN_1
-    - prowlarr.vm1.REDACTED_DOMAIN_1
-    - bazarr.vm1.REDACTED_DOMAIN_1
-    - lidarr.vm1.REDACTED_DOMAIN_1
+name: servarr
 
-# Common Keys for all apps
+x-arcane:
+  icon: ${COMPOSE_PROJECT_NAME}
+  urls:
+    - qbittorrent.${DOMAIN}
+    - radarr.${DOMAIN}
+    - sonarr.${DOMAIN}
+    - prowlarr.${DOMAIN}
+    - bazarr.${DOMAIN}
+    - lidarr.${DOMAIN}
+
+#############################################
+# common properties fragments
+#############################################
+
 x-common-keys: &common-keys
     restart: unless-stopped
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: ${TZ}
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: ${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+
+x-proxy-common: &proxy-common
+    <<: *common-keys
     networks:
       - default  # Keeps it on arr_network
       - proxy    # Adds it to proxy network for Traefik
-
-services:
-#############################################
-# GLUETUN - VPN Gateway
-#############################################
-  gluetun:
-    image: qmcgaw/gluetun:v3.41
-    container_name: gluetun
-    restart: unless-stopped
-    env_file: secrets.env
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    networks:
-      - default
-      - proxy
-    environment:
-      - TZ=${TZ}
-      - VPN_SERVICE_PROVIDER=protonvpn
-      - VPN_TYPE=wireguard
-      - STREAM_ONLY=on
-      - PORT_FORWARD_ONLY=on
-      - VPN_PORT_FORWARDING=on
-    volumes:
-      - /docker/shared/gluetun:/tmp/gluetun
-      - /docker/appdata/gluetun:/gluetun
-    ports:
-      - 6881:6881        # torrent port
-      - 6881:6881/udp
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/gluetun.webp
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.qbittorrent.entrypoints=https"
-      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN}`)"
-      - "traefik.http.routers.qbittorrent.tls=true"
-      - "traefik.http.routers.qbittorrent.tls.certresolver=cloudflare"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
-
-#############################################
-# QBITTORRENT (via VPN) + Port Updater
-#############################################
-  qbittorrent:
-    image: ghcr.io/hotio/qbittorrent:latest
-    container_name: qbittorrent
-    network_mode: "service:gluetun"
-    restart: unless-stopped
-    environment:
-      - WEBUI_PORT=8080
-      - PUID=1000
-      - PGID=1000
-      - TZ=${TZ}
-    labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/qbittorrent.webp
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /docker/appdata/qbittorrent:/config
-      - /data:/data
-
-  qb-port-sync:
-    image: alpine:latest
-    container_name: qb-port-sync
-    network_mode: service:gluetun
-    restart: unless-stopped
-    volumes:
-      - /docker/shared/gluetun:/tmp/gluetun:ro
-      - ./update-port.sh:/update-port.sh:ro
-    environment:
-      - TZ=${TZ}
-      - POLL_INTERVAL=30
-    labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/alpine-linux.webp
-    depends_on:
-      - gluetun
-      - qbittorrent
-    command: ["sh", "/update-port.sh"]
-
-#############################################
-# RADARR - Movies
-#############################################
-  radarr:
-    <<: *common-keys
-    image: ghcr.io/hotio/radarr:latest
-    container_name: radarr
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.radarr.entrypoints=https"
-      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)"
-      - "traefik.http.routers.radarr.tls=true"
-      - "traefik.http.routers.radarr.tls.certresolver=cloudflare"
-      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/radarr.webp
-    volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/radarr:/config
-      - /data:/data
-
-#############################################
-# SONARR - TV Shows
-#############################################
-  sonarr:
-    <<: *common-keys
-    image: ghcr.io/hotio/sonarr:latest
-    container_name: sonarr
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.sonarr.entrypoints=https"
-      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)"
-      - "traefik.http.routers.sonarr.tls=true"
-      - "traefik.http.routers.sonarr.tls.certresolver=cloudflare"
-      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/sonarr.webp
-    volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/sonarr:/config
-      - /data:/data
-
-#############################################
-# LIDARR - Music
-#############################################
-  lidarr:
-    <<: *common-keys
-    image: ghcr.io/hotio/lidarr:latest
-    container_name: lidarr
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.lidarr.entrypoints=https"
-      - "traefik.http.routers.lidarr.rule=Host(`lidarr.${DOMAIN}`)"
-      - "traefik.http.routers.lidarr.tls=true"
-      - "traefik.http.routers.lidarr.tls.certresolver=cloudflare"
-      - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/lidarr.webp
-    volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/lidarr:/config
-      - /data:/data
-
-#############################################
-# BAZARR - Subtitles
-#############################################
-  bazarr:
-    <<: *common-keys
-    image: ghcr.io/hotio/bazarr:latest
-    container_name: bazarr
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.bazarr.entrypoints=https"
-      - "traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAIN}`)"
-      - "traefik.http.routers.bazarr.tls=true"
-      - "traefik.http.routers.bazarr.tls.certresolver=cloudflare"
-      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/bazarr.webp
-    volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/bazarr:/config
-      - /data:/data
-
-#############################################
-# PROWLARR - Indexer Manager
-#############################################
-  prowlarr:
-    <<: *common-keys
-    image: ghcr.io/hotio/prowlarr:latest
-    container_name: prowlarr
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.prowlarr.entrypoints=https"
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)"
-      - "traefik.http.routers.prowlarr.tls=true"
-      - "traefik.http.routers.prowlarr.tls.certresolver=cloudflare"
-      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/prowlarr.webp
-    volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /docker/appdata/prowlarr:/config
+      - traefik.enable=true
+      - traefik.docker.network=proxy
 
 #############################################
 # ARR Stack Dedicated Network
@@ -214,3 +46,165 @@ networks:
     name: arr_network
   proxy:
     external: true
+
+services:
+#############################################
+# GLUETUN - VPN Gateway
+#############################################
+  gluetun:
+    <<: *proxy-common
+    container_name: gluetun
+    image: qmcgaw/gluetun:v3.41
+    env_file:
+      - .env.secrets
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - /docker/shared/gluetun:/tmp/gluetun
+      - /docker/appdata/gluetun:/gluetun
+    ports:
+      - 6881:6881 # torrent port
+      - 6881:6881/udp
+    labels:
+      - arcane.icon=gluetun
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.qbittorrent.tls=true
+      - traefik.http.routers.qbittorrent.entrypoints=https
+      - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN}`)
+      - traefik.http.routers.qbittorrent.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
+
+#############################################
+# QBITTORRENT (via VPN) + Port Updater
+#############################################
+  qbittorrent:
+    <<: *common-keys
+    container_name: qbittorrent
+    image: ghcr.io/hotio/qbittorrent:latest
+    network_mode: "service:gluetun"
+    environment:
+      - WEBUI_PORT=8080
+    labels:
+      - arcane.icon=qbittorrent
+    volumes:
+      - /docker/appdata/qbittorrent:/config
+      - /data:/data
+
+  qb-port-sync:
+    container_name: qb-port-sync
+    image: alpine:latest
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+    command: ["sh", "/update-port.sh"]
+    depends_on:
+      - gluetun
+      - qbittorrent
+    environment:
+      - POLL_INTERVAL=30
+    volumes:
+      - /docker/shared/gluetun:/tmp/gluetun:ro
+      - ./update-port.sh:/update-port.sh:ro
+    labels:
+      - arcane.icon=alpine-linux
+
+#############################################
+# RADARR - Movies
+#############################################
+  radarr:
+    <<: *proxy-common
+    container_name: radarr
+    image: ghcr.io/hotio/radarr:latest
+    labels:
+      - arcane.icon=radarr
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.radarr.tls=true
+      - traefik.http.routers.radarr.entrypoints=https
+      - traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)
+      - traefik.http.routers.radarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.radarr.loadbalancer.server.port=7878
+    volumes:
+      - /docker/appdata/radarr:/config
+      - /data:/data
+
+#############################################
+# SONARR - TV Shows
+#############################################
+  sonarr:
+    <<: *proxy-common
+    image: ghcr.io/hotio/sonarr:latest
+    container_name: sonarr
+    labels:
+      - arcane.icon=sonarr
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.sonarr.tls=true
+      - traefik.http.routers.sonarr.entrypoints=https
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)
+      - traefik.http.routers.sonarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.sonarr.loadbalancer.server.port=8989
+    volumes:
+      - /docker/appdata/sonarr:/config
+      - /data:/data
+
+#############################################
+# LIDARR - Music
+#############################################
+  lidarr:
+    <<: *proxy-common
+    image: ghcr.io/hotio/lidarr:latest
+    container_name: lidarr
+    labels:
+      - arcane.icon=lidarr
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.lidarr.tls=true
+      - traefik.http.routers.lidarr.entrypoints=https
+      - traefik.http.routers.lidarr.rule=Host(`lidarr.${DOMAIN}`)
+      - traefik.http.routers.lidarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.lidarr.loadbalancer.server.port=8686
+    volumes:
+      - /docker/appdata/lidarr:/config
+      - /data:/data
+
+#############################################
+# BAZARR - Subtitles
+#############################################
+  bazarr:
+    <<: *proxy-common
+    image: ghcr.io/hotio/bazarr:latest
+    container_name: bazarr
+    labels:
+      - arcane.icon=bazarr
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.bazarr.tls=true
+      - traefik.http.routers.bazarr.entrypoints=https
+      - traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAIN}`)
+      - traefik.http.routers.bazarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.bazarr.loadbalancer.server.port=6767
+    volumes:
+      - /docker/appdata/bazarr:/config
+      - /data:/data
+
+#############################################
+# PROWLARR - Indexer Manager
+#############################################
+  prowlarr:
+    <<: *proxy-common
+    image: ghcr.io/hotio/prowlarr:latest
+    container_name: prowlarr
+    labels:
+      - arcane.icon=prowlarr
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.prowlarr.tls=true
+      - traefik.http.routers.prowlarr.entrypoints=https
+      - traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)
+      - traefik.http.routers.prowlarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.prowlarr.loadbalancer.server.port=9696
+    volumes:
+      - /docker/appdata/prowlarr:/config

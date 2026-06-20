@@ -1,11 +1,22 @@
+name: &stack traefik
+
 x-arcane:
-  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/traefik.webp
+  icon: *stack
   urls:
-    - traefik.vm1.REDACTED_DOMAIN_1
+    - ${COMPOSE_PROJECT_NAME}.${SERVER_DOMAIN}
+
+secrets:
+  cf_api_token:
+    file: ./cf_api_token.txt
+
+networks:
+  proxy:
+    external: true
+
 services:
   traefik:
-    image: traefik:v3.6
-    container_name: ${STACK}
+    container_name: ${COMPOSE_PROJECT_NAME}
+    image: traefik:v3.7
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -15,40 +26,56 @@ services:
       - 80:80
       - 443:443
     environment:
-      CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token # note using _FILE for docker secrets
+      CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token
     secrets:
       - cf_api_token
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./data/traefik.yml:/traefik.yml:ro
-      - ./data/acme.json:/acme.json
       - ./data/dynamic:/dynamic:ro
+      - ./data/acme.json:/acme.json
       - ./logs:/var/log/traefik
-    labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/${STACK:-arcane}.webp
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=http"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
-      - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth@file"
-      - "traefik.http.routers.traefik-secure.tls=true"
-      - "traefik.http.routers.traefik-secure.service=api@internal"
-      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].main=vm1.REDACTED_DOMAIN_1"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.vm1.REDACTED_DOMAIN_1"
-      - "traefik.http.routers.traefik-secure.tls.domains[1].main=REDACTED_DOMAIN_1"
-      - "traefik.http.routers.traefik-secure.tls.domains[1].sans=*.REDACTED_DOMAIN_1"
-      - "traefik.http.routers.traefik-secure.tls.domains[2].main=zimablade.REDACTED_DOMAIN_1"
-      - "traefik.http.routers.traefik-secure.tls.domains[2].sans=*.zimablade.REDACTED_DOMAIN_1"
-secrets:
-  cf_api_token:
-    file: ./cf_api_token.txt
+    command:
+      - --api.dashboard=true
+      - --api.debug=false
 
-networks:
-  proxy:
-    external: true
+      - --entrypoints.http.address=:80
+      - --entrypoints.http.http.redirections.entrypoint.to=https
+      - --entrypoints.http.http.redirections.entrypoint.scheme=https
+      - --entrypoints.https.address=:443
+      - --entrypoints.https.transport.respondingtimeouts.readtimeout=600s
+      - --entrypoints.https.transport.respondingtimeouts.writetimeout=600s
+      - --entrypoints.https.transport.respondingtimeouts.idletimeout=600s
+
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=proxy
+
+      - --providers.file.directory=/dynamic
+      - --providers.file.watch=true
+
+      - --certificatesresolvers.cloudflare.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.cloudflare.acme.storage=/acme.json
+      - --certificatesresolvers.cloudflare.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      # - --certificatesresolvers.cloudflare.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+
+      - --log.level=INFO
+      - --accesslog.filepath=/var/log/traefik/access.log
+    labels:
+      - arcane.icon=${COMPOSE_PROJECT_NAME}
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`${COMPOSE_PROJECT_NAME}.${SERVER_DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth@file,sslheader"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${SERVER_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${SERVER_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[1].main=${BASE_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[1].sans=*.${BASE_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[2].main=${NAS_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[2].sans=*.${NAS_DOMAIN}"

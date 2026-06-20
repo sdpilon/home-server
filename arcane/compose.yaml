@@ -1,36 +1,42 @@
+name: &stack arcane
+
 x-arcane:
-  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/arcane.webp
+  icon: *stack
   urls:
-    - arcane.vm1.REDACTED_DOMAIN_1
+    - ${COMPOSE_PROJECT_NAME}.${DOMAIN}
+
 networks:
   proxy:
     external: true
+
+volumes:
+  appdata:
+
 services:
   arcane:
-    container_name: ${STACK}
+    container_name: *stack
     image: ghcr.io/getarcaneapp/arcane:latest
-    env_file: secrets.env
+    env_file:
+      - .env.secrets
     restart: unless-stopped
     ports:
-      - '3552:3552'
+      - 3552:3552
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /app/data/projects:/app/data/projects
       - appdata:/app/data
+    user: 1000:1000
     environment:
-      - APP_URL=http://localhost:3552
-      - PUID=1000
-      - PGID=1000
+      APP_URL: https://${COMPOSE_PROJECT_NAME}.${DOMAIN}
+      TRUSTED_PROXIES: 172.16.0.0/12
     networks:
       - proxy
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/${STACK}.webp
-      - "traefik.enable=true"
-      - "traefik.http.routers.${STACK}.entrypoints=https"
-      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.${STACK}.tls=true"
-      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
-      - "traefik.http.services.${STACK}.loadbalancer.server.port=3552"
-volumes:
-  appdata:
+      - arcane.icon=${COMPOSE_PROJECT_NAME}
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=3552

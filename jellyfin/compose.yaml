@@ -1,37 +1,70 @@
+name: &stack jellyfin
+
 x-arcane:
-  icon: ${SELFHST_ICONS:-missing-icon-source}/webp/jellyfin.webp
+  icon: *stack
   urls:
-    - https://jellyfin.vm1.REDACTED_DOMAIN_1
+    - ${COMPOSE_PROJECT_NAME}.${DOMAIN}
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=ZimaBlade,rw,nfsvers=4
+      device: ":/media/HDD-Storage/servarr/"
+
+networks:
+  proxy:
+    external: true
 
 services:
   jellyfin:
     image: ghcr.io/hotio/jellyfin:latest
-    container_name: ${STACK}
+    container_name: ${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     logging:
       driver: json-file
     environment:
-      PUID: 1000
-      PGID: 1000
+      TZ: ${TZ}
     ports:
       - 8096:8096
       - 8920:8920
     networks:
       - proxy
     volumes:
-      - /etc/localtime:/etc/localtime:ro #read-only
-      - /data/media:/data/media:ro #read-only
-      - /docker/appdata/${STACK}:/config
-      - /data/metadata:/data/metadata
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/${COMPOSE_PROJECT_NAME}:/config
+      - type: volume
+        source: data
+        target: /data/media
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: media
+      - type: volume
+        source: data
+        target: /data/metadata
+        read_only: false
+        volume:
+          nocopy: true
+          subpath: metadata
     labels:
-      - com.getarcaneapp.arcane.icon=${SELFHST_ICONS:-missing-icon-source}/webp/${STACK}.webp
-      - "traefik.enable=true"
-      - "traefik.http.routers.${STACK}.entrypoints=https"
-      - "traefik.http.routers.${STACK}.rule=Host(`${STACK}.vm1.REDACTED_DOMAIN_1`)"
-      - "traefik.http.routers.${STACK}.tls=true"
-      - "traefik.http.routers.${STACK}.tls.certresolver=cloudflare"
-      - "traefik.http.services.${STACK}.loadbalancer.server.port=8096"
+      - arcane.icon=${COMPOSE_PROJECT_NAME}
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8096
 
-networks:
-  proxy:
-    external: true
+  jellyfin-tizen-installer:
+    profiles: [tv-app]
+    container_name: jellyfin-tizen-installer
+    image: ghcr.io/georift/install-jellyfin-tizen
+    # Host network is recommended for Tizen Studio (sdb) connectivity
+    network_mode: host
+    # Interactive mode is often required for the installer script
+    tty: true
+    stdin_open: true
+    # Pass the TV IP address as the command argument
+    command: ${TV_IP}

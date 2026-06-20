@@ -1,7 +1,11 @@
-secrets.env
+.env*
+*secret*
+logs
+
+# traefik
 dynamic-secrets.yml
-logs/
 acme.json
 cf_api_token.txt
-servarr/.env
+
+# retired services
 .decomissioned/
