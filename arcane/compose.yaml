@@ -8,11 +8,44 @@ x-arcane:
 networks:
   proxy:
     external: true
+  arcane-internal:
+    driver: bridge
+    name: arcane-internal
 
 volumes:
   appdata:
 
 services:
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: arcane-docker-proxy
+    environment:
+      - LOG_LEVEL=warning
+
+      - EVENTS=1
+      - PING=1
+      - VERSION=1
+
+      # Security critical
+      - AUTH=0
+      - SECRETS=0
+      - POST=1
+
+      - CONTAINERS=1
+      - EXEC=1
+      - IMAGES=1
+      - INFO=1
+      - NETWORKS=1
+      - VOLUMES=1
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - arcane-internal
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
   arcane:
     container_name: *stack
     image: ghcr.io/getarcaneapp/arcane:latest
@@ -23,20 +56,29 @@ services:
       - 3552:3552
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /app/data/projects:/app/data/projects
+      - /app/data/projects:/app/data/projects:z
       - appdata:/app/data
-    user: 1000:1000
     environment:
+      PUID: 1000
+      PGID: 1000
       APP_URL: https://${COMPOSE_PROJECT_NAME}.${DOMAIN}
       TRUSTED_PROXIES: 172.16.0.0/12
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
+    depends_on:
+      - docker-socket-proxy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3552/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
     networks:
+      - arcane-internal
       - proxy
     labels:
-      - arcane.icon=${COMPOSE_PROJECT_NAME}
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare
       - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=3552
