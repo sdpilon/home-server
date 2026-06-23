@@ -19,14 +19,11 @@ x-common-keys: &common-keys
     environment:
       PUID: 1000
       PGID: 1000
-      TZ: ${TZ}
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
 
 x-proxy-common: &proxy-common
     <<: *common-keys
@@ -62,6 +59,7 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/shared/gluetun:/tmp/gluetun
       - /docker/appdata/gluetun:/gluetun
     ports:
@@ -74,7 +72,7 @@ services:
       - traefik.http.routers.qbittorrent.tls=true
       - traefik.http.routers.qbittorrent.entrypoints=https
       - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN}`)
-      - traefik.http.routers.qbittorrent.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.qbittorrent.tls.certresolver=cloudflare
       - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
 
 #############################################
@@ -90,6 +88,7 @@ services:
     labels:
       - arcane.icon=qbittorrent
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/qbittorrent:/config
       - /data:/data
 
@@ -105,6 +104,7 @@ services:
     environment:
       - POLL_INTERVAL=30
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/shared/gluetun:/tmp/gluetun:ro
       - ./update-port.sh:/update-port.sh:ro
     labels:
@@ -124,9 +124,10 @@ services:
       - traefik.http.routers.radarr.tls=true
       - traefik.http.routers.radarr.entrypoints=https
       - traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)
-      - traefik.http.routers.radarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.radarr.tls.certresolver=cloudflare
       - traefik.http.services.radarr.loadbalancer.server.port=7878
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/radarr:/config
       - /data:/data
 
@@ -144,9 +145,10 @@ services:
       - traefik.http.routers.sonarr.tls=true
       - traefik.http.routers.sonarr.entrypoints=https
       - traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)
-      - traefik.http.routers.sonarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.sonarr.tls.certresolver=cloudflare
       - traefik.http.services.sonarr.loadbalancer.server.port=8989
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/sonarr:/config
       - /data:/data
 
@@ -164,9 +166,10 @@ services:
       - traefik.http.routers.lidarr.tls=true
       - traefik.http.routers.lidarr.entrypoints=https
       - traefik.http.routers.lidarr.rule=Host(`lidarr.${DOMAIN}`)
-      - traefik.http.routers.lidarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.lidarr.tls.certresolver=cloudflare
       - traefik.http.services.lidarr.loadbalancer.server.port=8686
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/lidarr:/config
       - /data:/data
 
@@ -184,9 +187,10 @@ services:
       - traefik.http.routers.bazarr.tls=true
       - traefik.http.routers.bazarr.entrypoints=https
       - traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAIN}`)
-      - traefik.http.routers.bazarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.bazarr.tls.certresolver=cloudflare
       - traefik.http.services.bazarr.loadbalancer.server.port=6767
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/bazarr:/config
       - /data:/data
 
@@ -204,7 +208,8 @@ services:
       - traefik.http.routers.prowlarr.tls=true
       - traefik.http.routers.prowlarr.entrypoints=https
       - traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)
-      - traefik.http.routers.prowlarr.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.prowlarr.tls.certresolver=cloudflare
       - traefik.http.services.prowlarr.loadbalancer.server.port=9696
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/prowlarr:/config

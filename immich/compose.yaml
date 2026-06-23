@@ -7,8 +7,6 @@ x-arcane:
 
 x-common: &common
   restart: unless-stopped
-  volumes:
-    - /etc/localtime:/etc/localtime:ro
 
 secrets:
   immich_db_user:
@@ -52,7 +50,6 @@ services:
     ports:
       - 2283:2283
     labels:
-      - arcane.icon=${COMPOSE_PROJECT_NAME}
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
@@ -62,6 +59,7 @@ services:
       - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=2283
       - traefik.http.middlewares.immich-buffering.buffering.maxRequestBodyBytes=0
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - upload:/usr/src/app/upload
       - appdata:/data
 
@@ -72,9 +70,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    labels:
-      arcane.icon: *stack
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - immich_mlmodels:/cache
 
   redis:
@@ -86,6 +83,7 @@ services:
     labels:
       arcane.icon: redis
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - redis:/data
 
   database:
@@ -103,4 +101,5 @@ services:
     labels:
       arcane.icon: postgresql
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - immich_pgdata:/var/lib/postgresql/data

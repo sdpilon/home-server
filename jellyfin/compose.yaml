@@ -24,8 +24,6 @@ services:
     restart: unless-stopped
     logging:
       driver: json-file
-    environment:
-      TZ: ${TZ}
     ports:
       - 8096:8096
       - 8920:8920
@@ -49,12 +47,11 @@ services:
           nocopy: true
           subpath: metadata
     labels:
-      - arcane.icon=${COMPOSE_PROJECT_NAME}
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=${CERT_RESOLVER}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare
       - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8096
 
   jellyfin-tizen-installer:

@@ -64,7 +64,6 @@ services:
       - --log.level=INFO
       - --accesslog.filepath=/var/log/traefik/access.log
     labels:
-      - arcane.icon=${COMPOSE_PROJECT_NAME}
       - "traefik.enable=true"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
