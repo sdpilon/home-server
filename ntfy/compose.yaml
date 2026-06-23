@@ -1,0 +1,32 @@
+name: &stack ntfy
+
+x-arcane:
+  icon: *stack
+  urls:
+  - ${COMPOSE_PROJECT_NAME}.${DOMAIN}
+
+networks:
+  proxy:
+    external: true
+
+services:
+  ntfy:
+    container_name: ${COMPOSE_PROJECT_NAME}
+    image: binwiederhier/ntfy
+    restart: unless-stopped
+    # init: true # needed, if healthcheck is used. Prevents zombie processes
+    command:
+      - serve
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/cache/ntfy:/var/cache/ntfy
+      - /etc/ntfy:/etc/ntfy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80"
