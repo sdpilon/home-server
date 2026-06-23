@@ -19,6 +19,7 @@ x-common-keys: &common-keys
     environment:
       PUID: 1000
       PGID: 1000
+      TZ: ${TZ}
     logging:
       driver: json-file
       options:

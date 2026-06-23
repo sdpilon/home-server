@@ -1,11 +1,15 @@
+# Environment
 .env*
 *secret*
-logs
 
 # traefik
-dynamic-secrets.yml
+dynamic*.yml
 acme.json
 cf_api_token.txt
+logs
 
 # retired services
 .decomissioned/
+
+# vscode
+projects.code-workspace
