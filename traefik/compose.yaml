@@ -3,7 +3,7 @@ name: &stack traefik
 x-arcane:
   icon: *stack
   urls:
-    - ${COMPOSE_PROJECT_NAME}.${SERVER_DOMAIN}
+    - ${COMPOSE_PROJECT_NAME}.${DOCKERVM_DOMAIN}
 
 secrets:
   cf_api_token:
@@ -67,14 +67,12 @@ services:
       - "traefik.enable=true"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`${COMPOSE_PROJECT_NAME}.${SERVER_DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOCKERVM_DOMAIN}`)"
       - "traefik.http.routers.traefik-secure.middlewares=traefik-auth@file,sslheader"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${SERVER_DOMAIN}"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${SERVER_DOMAIN}"
-      - "traefik.http.routers.traefik-secure.tls.domains[1].main=${BASE_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${DOCKERVM_DOMAIN}"
       - "traefik.http.routers.traefik-secure.tls.domains[1].sans=*.${BASE_DOMAIN}"
-      - "traefik.http.routers.traefik-secure.tls.domains[2].main=${NAS_DOMAIN}"
-      - "traefik.http.routers.traefik-secure.tls.domains[2].sans=*.${NAS_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[2].sans=*.${PVE_DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[3].sans=*.${NAS_DOMAIN}"
