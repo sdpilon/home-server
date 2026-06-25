@@ -1,0 +1,73 @@
+http:
+  routers:
+    proxmox:
+      rule: "Host(`pve.example.com`)"
+      entryPoints:
+        - https
+      service: proxmox
+      tls:
+        certResolver: cloudflare
+
+    proxmenux:
+      rule: "Host(`menu.pve.example.com`)"
+      entryPoints:
+        - https
+      service: proxmenux
+      tls:
+        certResolver: cloudflare
+
+    cockpit:
+      rule: "Host(`cockpit.docker-vm.example.com`)"
+      entryPoints:
+        - https
+      service: cockpit
+      tls:
+        certResolver: cloudflare
+
+    nas-web:
+      rule: "Host(`nas.example.com`)"
+      entryPoints:
+        - https
+      service: nas-web
+      tls:
+        certResolver: cloudflare
+
+    nas-ttyd:
+      rule: "Host(`ttyd.nas.example.com`)"
+      entryPoints:
+        - https
+      service: nas-ttyd
+      tls:
+        certResolver: cloudflare
+
+  services:
+    proxmox:
+      loadBalancer:
+        servers:
+          - url: "https://pve.my-tailnet.ts.net"
+        serversTransport: insecure-transport
+
+    proxmenux:
+      loadBalancer:
+        servers:
+          - url: "http://pve.my-tailnet.ts.net:8008"
+
+    cockpit:
+      loadBalancer:
+        servers:
+          - url: "https://docker-vm.my-tailnet.ts.net:9090"
+        serversTransport: insecure-transport
+
+    nas-web:
+      loadBalancer:
+        servers:
+          - url: "http://nas.my-tailnet.ts.net"
+
+    nas-ttyd:
+      loadBalancer:
+        servers:
+          - url: "http://nas.my-tailnet.ts.net:2222"
+
+  serversTransports:
+    insecure-transport:
+      insecureSkipVerify: true # For self-signed cert

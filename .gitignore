@@ -1,15 +1,20 @@
-# Environment
-.env*
-*secret*
+# Immich: ./immich/secrets/
+postgres_password.txt
+postgres_username.txt
 
-# traefik
-dynamic*.yml
-acme.json
+# Traefik: ./traefik/
 cf_api_token.txt
-logs
+# ./traefik/data/
+acme.json
+logs/
+# ./traefik/data/dynamic/
+dynamic*.yml
 
-# retired services
-.decomissioned/
+# Environment files
+.env*
+
+# but don't ignore any files with the .example suffix
+!*.example
 
 # vscode
 projects.code-workspace
