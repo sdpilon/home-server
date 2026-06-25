@@ -1,35 +1,35 @@
 # Docker VM Home Server Configuration
 
-My personal Docker stacks setup. Not intended for public use. 
+My personal Docker stacks setup. Not intended for public use.
 
 
 ## Overview
 
 - Running on a Debian 13 (bookworm) VM in Proxmox
 - Accesses storage over NFS mounts on my NAS
-- Uses [Arcane](https://getarcane.app/) for Docker Compose management. 
-  - It's actually useful on the scale I'm currently working at, i.e., a single environment. 
-  - It has the right level of control for me, where I can directly edit the `compose.yaml`s (or any files now after a recent update). 
-  - The right amount of monitoring and visibility. 
+- Uses [Arcane](https://getarcane.app/) for Docker Compose management.
+  - It's actually useful on the scale I'm currently working at, i.e., a single environment.
+  - It has the right level of control for me, where I can directly edit the `compose.yaml`s (or any files now after a recent update).
+  - The right amount of monitoring and visibility.
   - And a nice looking UI which provides most functionality you need without having to ssh in for everything, which is handy even when I'm away from the computer, because the mobile version is fully usable. I have spun up a new stack from my phone while laying in bed.
 - Even though I use Arcane, everything still works without using Arcane, so I can still manage my stacks from the command line.
 
 ## Stacks & Services:
 
 
-- `arcane` -- The arcane web UI for managing Docker Compose stacks. 
+- `arcane` -- The arcane web UI for managing Docker Compose stacks.
   - 2 containers: arcane, docker socket proxy
 
-- `bentopdf` -- Tools for working with PDF documents, but local. I mainly use it for splitting and merging. Smaller docker image size compared to sterlingPDF. 
+- `bentopdf` -- Tools for working with PDF documents, but local. I mainly use it for splitting and merging. Smaller docker image size compared to sterlingPDF.
   - 1 container: bentopdf
 
-- `immich` -- The main photo management app I use every day. 
+- `immich` -- The main photo management app I use every day.
   - 4 containers: immich app, immich Machine learning backend, postgres database, redis cache
 
 - `it-tools` -- Some handy IT-related utilities. So I don't have to google to find some specific tool, find random website, and then enter my data into said random website.
   - 1 container: it-tools
 
-- `jellyfin` -- Media server, for serving media. 
+- `jellyfin` -- Media server, for serving media.
   - 2 containers: jellyfin app, tizen tv app installer/updater (only for docker profile: tv-app)
 
 - `ntfy` --  Currently not actually being used for anything.
@@ -50,4 +50,8 @@ Clone the repo to the directory where you want your Compose projects to live.
 
 For each service, copy the `*.example` file(s) and remove the `.example` suffix, then fill in the values for the environment.
 
-For example, to set up `immich`, copy `immich/.env.example` to `immich/.env` and fill in the values for the environment.
+For example, to set up `immich`,
+- copy `immich/.env.example` to `immich/.env` and fill in the values for the environment
+- copy `immich/secrets/postgres_username.txt.example` to `immich/secrets/postgres_username.txt` and fill in the real username
+- copy `immich/secrets/postgres_password.txt.example` to `immich/secrets/postgres_password.txt` and fill in the real password
+- run `docker compose up -d`
