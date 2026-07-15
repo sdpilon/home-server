@@ -1,0 +1,27 @@
+name: &stack uptime-kuma
+
+x-arcane:
+  icon: *stack
+  urls:
+    - ${COMPOSE_PROJECT_NAME}.${DOMAIN}
+    
+services:
+  app:
+    image: louislam/uptime-kuma:2
+    restart: unless-stopped
+    network_mode: host
+    container_name: ${COMPOSE_PROJECT_NAME}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - appdata:/app/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.url=http://${DOCKER_IP_ADDR}:${APP_PORT}
+
+volumes:
+  appdata:

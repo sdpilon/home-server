@@ -44,6 +44,9 @@ My personal Docker stacks setup. Not intended for public use.
 - `traefik` -- Reverse proxy and SSL termination for my services. Moved from `nginx-proxy-manager` because the config is declarative and lives in each service's compose file, for containers anyway. Some are outside of this VM, and are configured separately.
   - 1 container: traefik
 
+- `uptime-kuma` -- Monitoring my containers, and other services on other hosts, as well as the proxied URLs.
+  - 1 container: uptime-kuma
+
 ## Setup
 
 Clone the repo to the directory where you want your Compose projects to live.
