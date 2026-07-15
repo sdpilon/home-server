@@ -25,7 +25,7 @@ volumes:
     driver: local
     driver_opts:
       type: nfs
-      o: addr=ZimaBlade,rw,nfsvers=4
+      o: addr=${NAS_IP},rw,nfsvers=4
       device: ":/media/SSD-Storage/Data/Gallery/immich"
   immich_pgdata:
     external: true
@@ -70,6 +70,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+        test: python3 healthcheck.py
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - immich_mlmodels:/cache

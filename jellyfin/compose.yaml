@@ -10,7 +10,7 @@ volumes:
     driver: local
     driver_opts:
       type: nfs
-      o: addr=ZimaBlade,rw,nfsvers=4
+      o: addr=${NAS_IP},rw,nfsvers=4
       device: ":/media/HDD-Storage/servarr/"
 
 networks:
