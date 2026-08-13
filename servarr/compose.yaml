@@ -9,6 +9,7 @@ x-arcane:
     - prowlarr.${DOMAIN}
     - bazarr.${DOMAIN}
     - lidarr.${DOMAIN}
+    - jackett.${DOMAIN}
 
 #############################################
 # common properties fragments
@@ -214,3 +215,23 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/prowlarr:/config
+
+#############################################
+# JACKETT - Indexer Proxy (source for Prowlarr)
+#############################################
+  jackett:
+    <<: *proxy-common
+    image: ghcr.io/hotio/jackett:latest
+    container_name: jackett
+    labels:
+      - arcane.icon=jackett
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.jackett.tls=true
+      - traefik.http.routers.jackett.entrypoints=https
+      - traefik.http.routers.jackett.rule=Host(`jackett.${DOMAIN}`)
+      - traefik.http.routers.jackett.tls.certresolver=cloudflare
+      - traefik.http.services.jackett.loadbalancer.server.port=9117
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/jackett:/config
