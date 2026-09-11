@@ -1,0 +1,57 @@
+name: monitoring
+
+x-arcane:
+  icon: gatus
+  urls:
+    - ntfy.${DOMAIN}
+    - gatus.${DOMAIN}
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  gatus_data:
+
+services:
+  ntfy:
+    container_name: ntfy
+    image: binwiederhier/ntfy
+    restart: unless-stopped
+    # init: true # needed, if healthcheck is used. Prevents zombie processes
+    command:
+      - serve
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/cache/ntfy:/var/cache/ntfy
+      - /etc/ntfy:/etc/ntfy
+    labels:
+      - "arcane.icon=ntfy"
+      - "traefik.enable=true"
+      - "traefik.http.routers.ntfy.entrypoints=https"
+      - "traefik.http.routers.ntfy.tls=true"
+      - "traefik.http.routers.ntfy.tls.certresolver=cloudflare"
+      - "traefik.http.routers.ntfy.rule=Host(`ntfy.${DOMAIN}`)"
+
+  gatus:
+    container_name: gatus
+    image: twinproduction/gatus:latest
+    restart: unless-stopped
+    environment:
+      - DOMAIN=${DOMAIN}
+      - BASE_DOMAIN=${BASE_DOMAIN}
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./gatus/config.yaml:/config/config.yaml:ro
+      - gatus_data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gatus.entrypoints=https"
+      - "traefik.http.routers.gatus.tls=true"
+      - "traefik.http.routers.gatus.tls.certresolver=cloudflare"
+      - "traefik.http.routers.gatus.rule=Host(`gatus.${DOMAIN}`)"
+      - "traefik.http.services.gatus.loadbalancer.server.port=8080"

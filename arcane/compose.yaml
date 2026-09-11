@@ -67,7 +67,7 @@ services:
     depends_on:
       - docker-socket-proxy
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:3552/api/health"]
+      test: ["CMD", "curl", "--fail-early", "-fsS", "http://localhost:3552/api/health", "http://docker-socket-proxy:2375/_ping"]
       interval: 10s
       timeout: 3s
       retries: 5

@@ -1,0 +1,213 @@
+storage:
+  type: sqlite
+  path: /data/data.db
+
+alerting:
+  ntfy:
+    url: "https://ntfy.${DOMAIN}"
+    topic: "homelab-routine"
+    priority: 3
+    default-alert:
+      failure-threshold: 4
+      success-threshold: 2
+      send-on-resolved: true
+    overrides:
+      - group: critical
+        topic: "homelab-critical"
+        priority: 5
+
+endpoints:
+  # --- critical: broad-impact infrastructure. Fast alert, low threshold. ---
+  - name: traefik
+    group: critical
+    url: "https://traefik.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] < 500" # dashboard is behind basic auth, so 401 is a healthy response
+    alerts:
+      - type: ntfy
+        failure-threshold: 2
+        success-threshold: 1
+        send-on-resolved: true
+        description: "Reverse proxy unreachable - likely means most of the homelab is unreachable"
+
+  - name: arcane
+    group: critical
+    url: "https://arcane.${DOMAIN}/api/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == UP"
+    alerts:
+      - type: ntfy
+        failure-threshold: 2
+        success-threshold: 1
+        send-on-resolved: true
+        description: "Arcane unhealthy - this also covers its docker-socket-proxy sidecar, since the health endpoint checks both"
+
+  - name: ntfy
+    group: critical
+    url: "https://ntfy.${DOMAIN}/v1/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+        failure-threshold: 2
+        success-threshold: 1
+        send-on-resolved: true
+        description: "ntfy itself is unreachable - note: if this is down, you won't get this alert either. Check the Gatus dashboard directly."
+
+  # --- routine: individual apps. Higher threshold to absorb blips, alert-only default. ---
+  - name: jellyfin
+    group: routine
+    url: "https://jellyfin.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] < 400" # jellyfin redirects (302) to its web UI at the root path
+    alerts:
+      - type: ntfy
+
+  - name: immich
+    group: routine
+    url: "https://immich.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: bentopdf
+    group: routine
+    url: "https://bentopdf.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: it-tools
+    group: routine
+    url: "https://it-tools.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: omnitools
+    group: routine
+    url: "https://omnitools.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: repo-rater
+    group: routine
+    url: "https://repo-rater.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: qbittorrent
+    group: routine
+    url: "https://qbittorrent.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: radarr
+    group: routine
+    url: "https://radarr.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: sonarr
+    group: routine
+    url: "https://sonarr.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: lidarr
+    group: routine
+    url: "https://lidarr.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: bazarr
+    group: routine
+    url: "https://bazarr.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: prowlarr
+    group: routine
+    url: "https://prowlarr.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: cockpit
+    group: routine
+    url: "https://cockpit.${DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: proxmox
+    group: routine
+    url: "https://pve.${BASE_DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: proxmenux
+    group: routine
+    url: "https://menux.pve.${BASE_DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: zimablade-web
+    group: routine
+    url: "https://zimablade.${BASE_DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: zimablade-ttyd
+    group: routine
+    url: "https://ttyd.zimablade.${BASE_DOMAIN}"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
