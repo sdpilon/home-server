@@ -1,6 +1,9 @@
 # Docker VM Home Server Configuration
 
-My personal Docker stacks setup. Not intended for public use.
+This is my personal Docker stacks setup.
+
+> [!CAUTION]
+> The setup shown in this repository isn't meant to be exposed to the public internet. Several services have no authentication of their own and rely entirely on the network being private (I deploy it behind Tailscale).
 
 
 ## Overview
@@ -32,8 +35,8 @@ My personal Docker stacks setup. Not intended for public use.
 - `jellyfin` -- Media server, for serving media.
   - 2 containers: jellyfin app, tizen tv app installer/updater (only for docker profile: tv-app)
 
-- `ntfy` --  Currently not actually being used for anything.
-  - 1 container: ntfy
+- `monitoring` -- ntfy for push notifications. Gatus for declarative uptime monitoring, alerts through ntfy.
+  - 2 containers: ntfy, gatus
 
 - `omnitools` -- Same story as it-tools, but more general purpose.
   - 1 container: omnitools
@@ -43,9 +46,6 @@ My personal Docker stacks setup. Not intended for public use.
 
 - `traefik` -- Reverse proxy and SSL termination for my services. Moved from `nginx-proxy-manager` because the config is declarative and lives in each service's compose file, for containers anyway. Some are outside of this VM, and are configured separately.
   - 1 container: traefik
-
-- `uptime-kuma` -- Monitoring my containers, and other services on other hosts, as well as the proxied URLs.
-  - 1 container: uptime-kuma
 
 ## Setup
 
