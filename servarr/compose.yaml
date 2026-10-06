@@ -14,26 +14,32 @@ x-arcane:
 # common properties fragments
 #############################################
 
+x-logging: &logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-common-env: &common-env
+    PUID: 1000
+    PGID: 1000
+    TZ: ${TZ}
+
 x-common-keys: &common-keys
     restart: unless-stopped
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: ${TZ}
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    environment: *common-env
+    logging: *logging
 
 x-proxy-common: &proxy-common
     <<: *common-keys
     networks:
       - default  # Keeps it on arr_network
       - proxy    # Adds it to proxy network for Traefik
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
+
+# Merged into each service's map-form labels with `<<: *traefik`
+x-traefik: &traefik
+    traefik.enable: "true"
+    traefik.docker.network: proxy
 
 #############################################
 # ARR Stack Dedicated Network
@@ -63,18 +69,17 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /docker/shared/gluetun:/tmp/gluetun
       - /docker/appdata/gluetun:/gluetun
-    ports:
-      - 6881:6881 # torrent port
-      - 6881:6881/udp
+    # No torrent port mapping: the VPN forwards a dynamic port (see /docker/shared/gluetun/forwarded_port),
+    # which qb-port-sync pushes to qBittorrent. A fixed host mapping would not match it.
     labels:
-      - arcane.icon=gluetun
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.qbittorrent.tls=true
-      - traefik.http.routers.qbittorrent.entrypoints=https
-      - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN}`)
-      - traefik.http.routers.qbittorrent.tls.certresolver=cloudflare
-      - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
+      <<: *traefik
+      arcane.icon: gluetun
+      # qBittorrent shares this network namespace, so its web UI route lives here
+      traefik.http.routers.qbittorrent.tls: "true"
+      traefik.http.routers.qbittorrent.entrypoints: https
+      traefik.http.routers.qbittorrent.rule: Host(`qbittorrent.${DOMAIN}`)
+      traefik.http.routers.qbittorrent.tls.certresolver: cloudflare
+      traefik.http.services.qbittorrent.loadbalancer.server.port: "8080"
 
 #############################################
 # QBITTORRENT (via VPN) + Port Updater
@@ -85,12 +90,10 @@ services:
     image: ghcr.io/hotio/qbittorrent:latest
     network_mode: "service:gluetun"
     environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: ${TZ}
+      <<: *common-env
       WEBUI_PORT: 8080
     labels:
-      - arcane.icon=qbittorrent
+      arcane.icon: qbittorrent
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/qbittorrent:/config
@@ -101,6 +104,7 @@ services:
     container_name: qb-port-sync
     image: alpine:latest
     restart: unless-stopped
+    logging: *logging
     network_mode: "service:gluetun"
     command: ["sh", "/update-port.sh"]
     depends_on:
@@ -123,14 +127,13 @@ services:
     container_name: radarr
     image: ghcr.io/hotio/radarr:latest
     labels:
-      - arcane.icon=radarr
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.radarr.tls=true
-      - traefik.http.routers.radarr.entrypoints=https
-      - traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)
-      - traefik.http.routers.radarr.tls.certresolver=cloudflare
-      - traefik.http.services.radarr.loadbalancer.server.port=7878
+      <<: *traefik
+      arcane.icon: radarr
+      traefik.http.routers.radarr.tls: "true"
+      traefik.http.routers.radarr.entrypoints: https
+      traefik.http.routers.radarr.rule: Host(`radarr.${DOMAIN}`)
+      traefik.http.routers.radarr.tls.certresolver: cloudflare
+      traefik.http.services.radarr.loadbalancer.server.port: "7878"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/radarr:/config
@@ -144,14 +147,13 @@ services:
     image: ghcr.io/hotio/sonarr:latest
     container_name: sonarr
     labels:
-      - arcane.icon=sonarr
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.sonarr.tls=true
-      - traefik.http.routers.sonarr.entrypoints=https
-      - traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)
-      - traefik.http.routers.sonarr.tls.certresolver=cloudflare
-      - traefik.http.services.sonarr.loadbalancer.server.port=8989
+      <<: *traefik
+      arcane.icon: sonarr
+      traefik.http.routers.sonarr.tls: "true"
+      traefik.http.routers.sonarr.entrypoints: https
+      traefik.http.routers.sonarr.rule: Host(`sonarr.${DOMAIN}`)
+      traefik.http.routers.sonarr.tls.certresolver: cloudflare
+      traefik.http.services.sonarr.loadbalancer.server.port: "8989"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/sonarr:/config
@@ -165,14 +167,13 @@ services:
     image: ghcr.io/hotio/lidarr:latest
     container_name: lidarr
     labels:
-      - arcane.icon=lidarr
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.lidarr.tls=true
-      - traefik.http.routers.lidarr.entrypoints=https
-      - traefik.http.routers.lidarr.rule=Host(`lidarr.${DOMAIN}`)
-      - traefik.http.routers.lidarr.tls.certresolver=cloudflare
-      - traefik.http.services.lidarr.loadbalancer.server.port=8686
+      <<: *traefik
+      arcane.icon: lidarr
+      traefik.http.routers.lidarr.tls: "true"
+      traefik.http.routers.lidarr.entrypoints: https
+      traefik.http.routers.lidarr.rule: Host(`lidarr.${DOMAIN}`)
+      traefik.http.routers.lidarr.tls.certresolver: cloudflare
+      traefik.http.services.lidarr.loadbalancer.server.port: "8686"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/lidarr:/config
@@ -186,14 +187,13 @@ services:
     image: ghcr.io/hotio/prowlarr:latest
     container_name: prowlarr
     labels:
-      - arcane.icon=prowlarr
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.prowlarr.tls=true
-      - traefik.http.routers.prowlarr.entrypoints=https
-      - traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)
-      - traefik.http.routers.prowlarr.tls.certresolver=cloudflare
-      - traefik.http.services.prowlarr.loadbalancer.server.port=9696
+      <<: *traefik
+      arcane.icon: prowlarr
+      traefik.http.routers.prowlarr.tls: "true"
+      traefik.http.routers.prowlarr.entrypoints: https
+      traefik.http.routers.prowlarr.rule: Host(`prowlarr.${DOMAIN}`)
+      traefik.http.routers.prowlarr.tls.certresolver: cloudflare
+      traefik.http.services.prowlarr.loadbalancer.server.port: "9696"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/prowlarr:/config
@@ -205,22 +205,30 @@ services:
     <<: *proxy-common
     image: ghcr.io/pennydreadful/bookshelf:hardcover
     container_name: readarr
-    ports:
-      - 8787:8787
     labels:
-      - arcane.icon=readarr
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.readarr.tls=true
-      - traefik.http.routers.readarr.entrypoints=https
-      - traefik.http.routers.readarr.rule=Host(`readarr.${DOMAIN}`)
-      - traefik.http.routers.readarr.tls.certresolver=cloudflare
-      - traefik.http.services.readarr.loadbalancer.server.port=8787
+      <<: *traefik
+      arcane.icon: readarr
+      traefik.http.routers.readarr.tls: "true"
+      traefik.http.routers.readarr.entrypoints: https
+      traefik.http.routers.readarr.rule: Host(`readarr.${DOMAIN}`)
+      traefik.http.routers.readarr.tls.certresolver: cloudflare
+      traefik.http.services.readarr.loadbalancer.server.port: "8787"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/bookshelf:/config
       - /data:/data
 
+# Optional: Add proxy for MAM
+  # flaresolverr:
+  #   image: ghcr.io/flaresolverr/flaresolverr:latest
+  #   container_name: flaresolverr
+  #   environment:
+  #     - LOG_LEVEL=info
+  #   ports:
+  #     - 8191:8191
+  #   restart: unless-stopped
+
+  # Reached by readarr over arr_network at http://rreading-glasses:8788 (no host port needed)
   rreading-glasses:
     depends_on:
       rreading-glasses-db:
@@ -232,17 +240,17 @@ services:
     command:
       - --verbose
     restart: unless-stopped
+    logging: *logging
     mem_limit: 512m
     env_file:
       - .env.rreading.secrets
-    ports:
-      - "8788:8788"
 
   rreading-glasses-db:
     image: postgres:17
     container_name: rreading-glasses-db
     hostname: rreading-glasses-db
     restart: unless-stopped
+    logging: *logging
     env_file:
       - .env.rreading.secrets
     healthcheck:
@@ -253,6 +261,28 @@ services:
       start_period: 10s
     volumes:
       - rreading_glasses_data:/var/lib/postgresql/data
+
+  # seerr:
+  #   <<: *proxy-common
+  #   image: ghcr.io/seerr-team/seerr:${SEER_RELEASE_TAG:-latest}
+  #   container_name: seerr
+  #   restart: unless-stopped
+  #   init: true
+  #   ports:
+  #     - ${SEERR_PORT:-5055}:5055
+  #   environment:
+  #     TZ: ${TZ}
+  #     #LOG_LEVEL: debug
+  #   volumes:
+  #     - /docker/appdata/config:/app/config
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+  #     start_period: 20s
+  #     timeout: 3s
+  #     interval: 15s
+  #     retries: 3
+  #   labels:
+  #     arcane.icon: seerr
 
 volumes:
   rreading_glasses_data:
