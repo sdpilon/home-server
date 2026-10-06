@@ -53,7 +53,7 @@ services:
     container_name: gluetun
     image: qmcgaw/gluetun:v3.41
     env_file:
-      - .env.secrets
+      - .env.vpn.secrets
     cap_add:
       - NET_ADMIN
     devices:
