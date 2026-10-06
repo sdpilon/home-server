@@ -92,6 +92,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/qbittorrent:/config
       - /data:/data
+      - ./qbit-hardlink:/scripts
 
   qb-port-sync:
     container_name: qb-port-sync
