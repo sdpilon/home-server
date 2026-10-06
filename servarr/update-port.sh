@@ -26,12 +26,11 @@ while true; do
 
   echo "[port-updater] Port changed: ${CURRENT_PORT:-none} -> ${NEW_PORT}"
 
-  # setPreferences returns empty body on success
-  SET_RESULT=$(set_port "$NEW_PORT")
-  if [ -z "$SET_RESULT" ]; then
+  # wget exits non-zero on HTTP errors (e.g. 403), so check the exit code, not the body
+  if set_port "$NEW_PORT" > /dev/null; then
     echo "[port-updater] Port updated to ${NEW_PORT}"
     CURRENT_PORT="$NEW_PORT"
   else
-    echo "[port-updater] Failed to set port: ${SET_RESULT}"
+    echo "[port-updater] Failed to set port ${NEW_PORT}, will retry"
   fi
 done
