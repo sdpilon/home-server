@@ -84,7 +84,10 @@ services:
     image: ghcr.io/hotio/qbittorrent:latest
     network_mode: "service:gluetun"
     environment:
-      - WEBUI_PORT=8080
+      PUID: 1000
+      PGID: 1000
+      TZ: ${TZ}
+      WEBUI_PORT: 8080
     labels:
       - arcane.icon=qbittorrent
     volumes:
