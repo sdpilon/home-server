@@ -8,6 +8,7 @@ x-arcane:
     - sonarr.${DOMAIN}
     - prowlarr.${DOMAIN}
     - lidarr.${DOMAIN}
+    - readarr.${DOMAIN}
 
 #############################################
 # common properties fragments
@@ -196,3 +197,62 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/prowlarr:/config
+
+#############################################
+# READARR - Books
+#############################################
+  readarr:
+    <<: *proxy-common
+    image: ghcr.io/pennydreadful/bookshelf:hardcover
+    container_name: readarr
+    ports:
+      - 8787:8787
+    labels:
+      - arcane.icon=readarr
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.readarr.tls=true
+      - traefik.http.routers.readarr.entrypoints=https
+      - traefik.http.routers.readarr.rule=Host(`readarr.${DOMAIN}`)
+      - traefik.http.routers.readarr.tls.certresolver=cloudflare
+      - traefik.http.services.readarr.loadbalancer.server.port=8787
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/bookshelf:/config
+      - /data:/data
+
+  rreading-glasses:
+    depends_on:
+      rreading-glasses-db:
+        condition: service_healthy
+    image: blampe/rreading-glasses:hardcover
+    container_name: rreading-glasses
+    hostname: rreading-glasses
+    entrypoint: ["/main", "serve"]
+    command:
+      - --verbose
+    restart: unless-stopped
+    mem_limit: 512m
+    env_file:
+      - .env.rreading.secrets
+    ports:
+      - "8788:8788"
+
+  rreading-glasses-db:
+    image: postgres:17
+    container_name: rreading-glasses-db
+    hostname: rreading-glasses-db
+    restart: unless-stopped
+    env_file:
+      - .env.rreading.secrets
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rreading-glasses -d rreading-glasses"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - rreading_glasses_data:/var/lib/postgresql/data
+
+volumes:
+  rreading_glasses_data:
