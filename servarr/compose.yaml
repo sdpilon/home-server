@@ -7,7 +7,6 @@ x-arcane:
     - radarr.${DOMAIN}
     - sonarr.${DOMAIN}
     - prowlarr.${DOMAIN}
-    - bazarr.${DOMAIN}
     - lidarr.${DOMAIN}
 
 #############################################
@@ -173,27 +172,6 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /docker/appdata/lidarr:/config
-      - /data:/data
-
-#############################################
-# BAZARR - Subtitles
-#############################################
-  bazarr:
-    <<: *proxy-common
-    image: ghcr.io/hotio/bazarr:latest
-    container_name: bazarr
-    labels:
-      - arcane.icon=bazarr
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.bazarr.tls=true
-      - traefik.http.routers.bazarr.entrypoints=https
-      - traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAIN}`)
-      - traefik.http.routers.bazarr.tls.certresolver=cloudflare
-      - traefik.http.services.bazarr.loadbalancer.server.port=6767
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /docker/appdata/bazarr:/config
       - /data:/data
 
 #############################################
