@@ -58,7 +58,7 @@ services:
   gluetun:
     <<: *proxy-common
     container_name: gluetun
-    image: qmcgaw/gluetun:v3.41
+    image: qmcgaw/gluetun:v3.41@sha256:fa19cc76b2af13d57a8d3dc3066f2ada061b1c761b8aecf989b3877c0486e027
     env_file:
       - .env.vpn.secrets
     cap_add:
@@ -87,7 +87,7 @@ services:
   qbittorrent:
     <<: *common-keys
     container_name: qbittorrent
-    image: ghcr.io/hotio/qbittorrent:latest
+    image: ghcr.io/hotio/qbittorrent@sha256:ec7a0c3cdf1258dbd5f395261b5d341b63655850d0f44d246dd56668dcfcfe7f
     network_mode: "service:gluetun"
     environment:
       <<: *common-env
@@ -102,7 +102,7 @@ services:
 
   qb-port-sync:
     container_name: qb-port-sync
-    image: alpine:latest
+    image: alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
     restart: unless-stopped
     logging: *logging
     network_mode: "service:gluetun"
@@ -125,7 +125,7 @@ services:
   radarr:
     <<: *proxy-common
     container_name: radarr
-    image: ghcr.io/hotio/radarr:latest
+    image: ghcr.io/hotio/radarr@sha256:853a3efcf10dc4141963b39e95284291cc4f9e18ff7dd4b7de2526a538032cf5
     labels:
       <<: *traefik
       arcane.icon: radarr
@@ -144,7 +144,7 @@ services:
 #############################################
   sonarr:
     <<: *proxy-common
-    image: ghcr.io/hotio/sonarr:latest
+    image: ghcr.io/hotio/sonarr@sha256:cf0d229e406574dc31a1490ea98bbb4d55706b8bb69b4ebe64a071b9fd3148db
     container_name: sonarr
     labels:
       <<: *traefik
@@ -164,7 +164,7 @@ services:
 #############################################
   lidarr:
     <<: *proxy-common
-    image: ghcr.io/hotio/lidarr:latest
+    image: ghcr.io/hotio/lidarr@sha256:547a4fa6ec02ff4dfec60089722ce710f0833b8c808eb52d0b6fc964db12604e
     container_name: lidarr
     labels:
       <<: *traefik
@@ -184,7 +184,7 @@ services:
 #############################################
   prowlarr:
     <<: *proxy-common
-    image: ghcr.io/hotio/prowlarr:latest
+    image: ghcr.io/hotio/prowlarr@sha256:260285d5fc6f485cef9f2efedc5068829746dd211d8d80a97a5219a2e927e487
     container_name: prowlarr
     labels:
       <<: *traefik
@@ -203,7 +203,7 @@ services:
 #############################################
   readarr:
     <<: *proxy-common
-    image: ghcr.io/pennydreadful/bookshelf:hardcover
+    image: ghcr.io/pennydreadful/bookshelf@sha256:67498dd5ece516867d72ee642abd6c1a66b36a135c8f7da0127109564372beb1
     container_name: readarr
     labels:
       <<: *traefik
@@ -233,7 +233,7 @@ services:
     depends_on:
       rreading-glasses-db:
         condition: service_healthy
-    image: blampe/rreading-glasses:hardcover
+    image: blampe/rreading-glasses@sha256:3f017a51d9007b715303a20f481c822e4df66485fc9e5f57f6fdf1de840dc02f
     container_name: rreading-glasses
     hostname: rreading-glasses
     entrypoint: ["/main", "serve"]
@@ -246,7 +246,7 @@ services:
       - .env.rreading.secrets
 
   rreading-glasses-db:
-    image: postgres:17
+    image: postgres@sha256:c6222b54873a2fb19591cb06b93ef2825c03cdb680396e3600f24921f340f630
     container_name: rreading-glasses-db
     hostname: rreading-glasses-db
     restart: unless-stopped
