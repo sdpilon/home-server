@@ -19,8 +19,16 @@ networks:
 
 services:
   jellyfin:
-    image: ghcr.io/hotio/jellyfin:latest
+    image: jellyfin/jellyfin@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
     container_name: ${COMPOSE_PROJECT_NAME}
+    # The official image runs as root by default. UID/GID 1000 matches the existing appdata owner.
+    user: "1000:1000"
+    # Keep the directory layout created by the hotio image (config files in /config, data in /config/data)
+    environment:
+      - JELLYFIN_CONFIG_DIR=/config
+      - JELLYFIN_DATA_DIR=/config/data
+      - JELLYFIN_LOG_DIR=/config/log
+      - JELLYFIN_CACHE_DIR=/config/cache
     restart: unless-stopped
     logging:
       driver: json-file
