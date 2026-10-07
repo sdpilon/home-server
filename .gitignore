@@ -10,6 +10,9 @@ logs/
 # ./traefik/data/dynamic/
 dynamic*.yml
 
+# Servarr: ./servarr/qbit-hardlink/ runtime log
+servarr/qbit-hardlink/*.log
+
 # Environment files
 .env*
 
