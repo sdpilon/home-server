@@ -37,7 +37,7 @@ services:
 
   gatus:
     container_name: gatus
-    image: twinproduction/gatus:latest
+    image: twinproduction/gatus:v5.37.0@sha256:094eb186e55235db367e90e9d56140e5897b7044c41de23cde4cc18e6da1242e
     restart: unless-stopped
     environment:
       - DOMAIN=${DOMAIN}

@@ -17,7 +17,7 @@ volumes:
 
 services:
   docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy:latest
+    image: tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
     container_name: arcane-docker-proxy
     environment:
       - LOG_LEVEL=warning
@@ -48,7 +48,7 @@ services:
 
   arcane:
     container_name: *stack
-    image: ghcr.io/getarcaneapp/arcane:latest
+    image: ghcr.io/getarcaneapp/arcane:v2.15.1@sha256:540c01198ca3e58dfd398d25c57c8dc241fa7e7f3d1d8d646c8268f19525b1a8
     env_file:
       - .env.secrets
     restart: unless-stopped

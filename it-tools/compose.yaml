@@ -11,7 +11,7 @@ networks:
 
 services:
   it-tools:
-    image: corentinth/it-tools
+    image: corentinth/it-tools:2024.10.22-7ca5933@sha256:8b8128748339583ca951af03dfe02a9a4d7363f61a216226fc28030731a5a61f
     restart: unless-stopped
     container_name: ${COMPOSE_PROJECT_NAME}
     networks:
