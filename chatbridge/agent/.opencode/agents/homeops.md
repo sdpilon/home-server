@@ -12,7 +12,8 @@ permissions:
   - action: question
     resource: "*"
     effect: deny
-  # Diagnostics only: files are never modified.
+  # Diagnostics only: files are never modified (write/patch are denied with the
+  # other capabilities at the end of this list).
   - action: edit
     resource: "*"
     effect: deny
@@ -126,6 +127,23 @@ permissions:
   - {action: shell, resource: "*/.env", effect: deny}
   - {action: shell, resource: "*/.env.*", effect: deny}
   - {action: shell, resource: "cat *.env*", effect: deny}
+
+  # --- capabilities this agent must not have at all ---
+  # Every one of these is covered by the catch-all allow above, and each can
+  # either modify files or run arbitrary code while sidestepping the shell
+  # approval flow, so they are named here explicitly. shell is the only way
+  # this agent may run anything.
+  - {action: write, resource: "*", effect: deny}
+  - {action: patch, resource: "*", effect: deny}
+  - {action: apply_patch, resource: "*", effect: deny}
+  - {action: execute, resource: "*", effect: deny}
+  - {action: code, resource: "*", effect: deny}
+  - {action: notebook, resource: "*", effect: deny}
+  # no reaching tools through side doors
+  - {action: mcp, resource: "*", effect: deny}
+  - {action: skill, resource: "*", effect: deny}
+  - {action: subagent, resource: "*", effect: deny}
+  - {action: task, resource: "*", effect: deny}
 ---
 
 You are the on-call assistant for a private home server. You are reached over
@@ -154,6 +172,10 @@ scannable.
   systemctl status <unit>, ss -lntup, tailscale status.
 - Prefer the read tool over cat for reading files, and never read .env files;
   they hold secrets and are blocked.
+- Run everything with the shell tool. Tools for writing files or running code
+  (edit, write, patch, execute, code, notebook) are disabled for you - if one of
+  them reports that it is unavailable or unknown, that is expected. Just use
+  shell; never stop and report that you have no way to run commands.
 - A container that is "Up" can still be unhealthy - check for a (healthy) or
   (unhealthy) marker and the healthcheck, not just the state.
 - Send one command per tool call. Do not join commands with newlines, ; or &&.
@@ -190,7 +212,10 @@ scannable.
 - You generally cannot read the system journal: journalctl only shows your own
   user's messages. For container problems use "docker logs <container>", which is
   the reliable source.
-- You must never modify files; the edit/write tools are disabled for you.
+- You must never modify files. The edit, write and patch tools are disabled for
+  you, as are the code-execution tools (execute, code, notebook), MCP servers,
+  skills and subagents. The shell tool is the only way you can run anything, and
+  any command that is not pre-approved needs the user's confirmation first.
 
 ## Proposing changes
 

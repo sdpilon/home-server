@@ -150,7 +150,7 @@ Everything lives in `.env` (git-ignored):
 | Variable           | Default                                  | Meaning                                        |
 | ------------------ | ---------------------------------------- | ---------------------------------------------- |
 | `ALLOWED_SENDERS`  | *(empty)*                                | comma-separated Delta Chat addresses           |
-| `OPENCODE_MODEL`   | *(OpenCode default)*                     | model as `provider/model`                      |
+| `OPENCODE_MODEL`   | `opencode-go/deepseek-v4.1-flash`        | model as `provider/model`                      |
 | `OPENCODE_AGENT`   | `homeops`                                | agent definition to run                        |
 | `BRIDGE_ACK_AFTER` | `12`                                     | seconds before the "still working" note        |
 | `BRIDGE_SHOW_TOOLS`| `1`                                      | append the commands the agent ran              |
@@ -163,9 +163,15 @@ Set in `compose.yaml` rather than `.env`: `OPENCODE_URL`,
 `OPENCODE_PASSWORD_FILE` points at the host's `~/.config/opencode/service.json`,
 mounted read-only, so rotating that password needs no change here.
 
-The default model is whatever OpenCode uses (`opencode/nemotron-3.5-super-vl-free`
-at the time of writing). For sharper answers on multi-step questions, point
-`OPENCODE_MODEL` at a stronger model — e.g. `OPENCODE_MODEL=opencode/<model>`.
+The model is set explicitly rather than left to OpenCode's default, because the
+whole reply format depends on the model following instructions: keep it short,
+one item per bullet, no markdown, no padded columns. `opencode-go/deepseek-v4.1-flash`
+is cheap ($0.15/$0.60 per million tokens) and does that well; the same model is
+also reachable as `opencode/deepseek-v4.1-flash` at double the price. A typical
+query here is ~15-20k input tokens (system prompt and tool docs, largely cached)
+and a few hundred output, so it costs a fraction of a cent. Free alternatives:
+`opencode/space-bunny-free`, `opencode/beam-free`, `opencode/mimo-v2.6-flash-free`.
+For harder multi-step questions, `opencode/claude-haiku-5-5` is a step up.
 
 ## Security notes
 

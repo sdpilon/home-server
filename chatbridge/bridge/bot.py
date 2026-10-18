@@ -334,6 +334,7 @@ class Bridge:
         self._threads: dict[tuple[int, int], threading.Thread] = {}
         self._accepted: set[tuple[int, int]] = set()
         self._declined: set[tuple[int, int]] = set()
+        self._model_synced: set[str] = set()
 
     # ------------------------------------------------------------- messaging
 
@@ -507,6 +508,7 @@ class Bridge:
         if session_id:
             try:
                 if self.oc.session_exists(session_id):
+                    self._sync_model(session_id)
                     return session_id
             except OpenCodeError:
                 pass
@@ -524,6 +526,23 @@ class Bridge:
         self.state.set_session(accid, chat_id, session_id)
         _log.info("chat %s -> new session %s", chat_id, session_id)  # type: ignore[union-attr]
         return session_id
+
+    def _sync_model(self, session_id: str) -> None:
+        """Point a reused session at the configured model.
+
+        A session's model is fixed when it is created, so changing
+        OPENCODE_MODEL would otherwise only affect new chats until every one of
+        them was reset with /new. Done once per session per process, which is
+        sufficient because the container is recreated whenever .env changes.
+        """
+        if not self.cfg.model or session_id in self._model_synced:
+            return
+        self._model_synced.add(session_id)
+        try:
+            self.oc.switch_model(session_id, self.cfg.model)
+            _log.info("session %s -> model %s", session_id, self.cfg.model)  # type: ignore[union-attr]
+        except OpenCodeError as exc:
+            _log.warning("could not switch %s to %s: %s", session_id, self.cfg.model, exc)  # type: ignore[union-attr]
 
     # ---------------------------------------------------------------- workers
 
@@ -832,13 +851,15 @@ class Bridge:
 
     @staticmethod
     def _tool_label(item: dict) -> str:
-        name = item.get("name") or "tool"
-        state = item.get("state") or {}
-        args = state.get("input") or {}
-        if name == "shell" and args.get("command"):
-            return str(args["command"])
-        detail = args.get("path") or args.get("filePath") or args.get("pattern") or ""
-        return f"{name} {detail}".strip()
+        """The command behind a shell tool call, for the "ran:" footer.
+
+        Other tool calls (read, glob, execute, ...) are not commands and mean
+        nothing to a reader, so they are never reported as something that ran.
+        """
+        if item.get("name") != "shell":
+            return ""
+        args = (item.get("state") or {}).get("input") or {}
+        return str(args.get("command") or "").strip()
 
 
 # ----------------------------------------------------------------------- hooks

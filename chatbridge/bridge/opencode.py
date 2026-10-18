@@ -93,6 +93,10 @@ class OpenCodeClient:
     def get_session(self, session_id: str) -> dict:
         return self._data(self._request("GET", f"/api/session/{session_id}"))
 
+    def switch_model(self, session_id: str, model: dict) -> None:
+        """Point a session at a model for its subsequent turns."""
+        self._request("POST", f"/api/session/{session_id}/model", {"model": model})
+
     def session_exists(self, session_id: str) -> bool:
         try:
             self.get_session(session_id)
