@@ -84,6 +84,7 @@ class Pending:
     action: str
     resources: list
     asked_at: float
+    reason: str = ""
     decision: Optional[str] = None  # "once" | "reject"
     replied: bool = False
 
@@ -196,31 +197,45 @@ def _plain_line(line: str) -> str:
     return line
 
 
+def _is_pipe_row(line: str) -> bool:
+    stripped = line.strip()
+    if stripped.count("|") < 2:
+        return False
+    # a leading-pipe markdown row, or the `a | b | c` style models often emit
+    return stripped.startswith("|") or " | " in stripped
+
+
 def _convert_tables(lines: list[str]) -> list[str]:
-    """Render markdown tables as one line per row; pipes mean nothing in chat."""
+    """Render table rows as one line each; pipes mean nothing in Delta Chat.
+
+    Only runs of three or more pipe-y lines are converted. A command such as
+    `docker ps | head -4 | wc -l` also contains pipe separators, and rewriting
+    one of those would corrupt the very text the user may be asked to approve.
+    """
     out: list[str] = []
     index = 0
     while index < len(lines):
-        line = lines[index]
-        is_row = line.strip().startswith("|") and line.count("|") >= 2
-        if not is_row:
-            out.append(line)
+        if not _is_pipe_row(lines[index]):
+            out.append(lines[index])
             index += 1
             continue
 
+        end = index
+        while end < len(lines) and _is_pipe_row(lines[end]):
+            end += 1
+        block = lines[index:end]
+        index = end
+        if len(block) < 3:
+            out.extend(block)
+            continue
+
         rows: list[Optional[list[str]]] = []
-        while index < len(lines):
-            candidate = lines[index]
-            if not (
-                candidate.strip().startswith("|") and candidate.count("|") >= 2
-            ):
-                break
+        for candidate in block:
             if _TABLE_SEP_RE.match(candidate) and "-" in candidate:
                 rows.append(None)
             else:
                 cells = candidate.strip().strip("|").split("|")
                 rows.append([cell.strip() for cell in cells])
-            index += 1
 
         # a header row followed by |---|---| carries no information in a chat
         if len(rows) >= 2 and rows[1] is None and rows[0] is not None:
@@ -420,11 +435,12 @@ class Bridge:
             self.send(accid, chat_id, f"Session {session_id} is unreachable: {exc}")
             return
         tokens = info.get("tokens") or {}
+        cost = info.get("cost") or 0
         lines = [
             f"session: {session_id}",
             f"agent:   {info.get('agent', '?')}",
             f"model:   {self._model_name(info)}",
-            f"cost:    ${(info.get('cost') or 0):.4f}",
+            f"cost:    {f'${cost:.4f}' if cost else 'free'}",
             f"tokens:  {tokens.get('input', 0)} in / {tokens.get('output', 0)} out",
         ]
         if tokens.get("reasoning"):
@@ -631,6 +647,7 @@ class Bridge:
                     action=request.get("action", "?"),
                     resources=request.get("resources") or [],
                     asked_at=time.time(),
+                    reason=self._rationale(session_id, request),
                 )
                 fresh.append(pending[request_id])
 
@@ -649,14 +666,39 @@ class Bridge:
             remaining = sum(1 for p in pending.values() if not p.replied)
 
         for item in fresh:
+            why = f"\n\nWhy: {item.reason}" if item.reason else ""
             self.send(
                 accid,
                 chat_id,
                 "🔐 The agent wants to run:\n\n"
-                f"{item.describe()}\n\n"
+                f"{item.describe()}{why}\n\n"
                 'Reply "yes" to allow it once, or "no" to reject it.',
             )
         return remaining
+
+    def _rationale(self, session_id: str, request: dict) -> str:
+        """The sentence the agent wrote just before asking, if it wrote one.
+
+        The permission request itself carries no explanation, but it points at
+        the assistant message containing the tool call, and any prose the model
+        put in front of that call is worth showing next to the command.
+        """
+        message_id = (request.get("source") or {}).get("messageID")
+        if not message_id:
+            return ""
+        try:
+            for message in self.oc.messages(session_id):
+                if message.get("id") != message_id:
+                    continue
+                prose = " ".join(
+                    (item.get("text") or "").strip()
+                    for item in (message.get("content") or [])
+                    if item.get("type") == "text"
+                )
+                return _clip(prose, 240)
+        except OpenCodeError:
+            pass
+        return ""
 
     def _clear_pending(self, key: tuple[int, int]) -> None:
         with self._lock:
@@ -732,42 +774,55 @@ class Bridge:
         narrated: list[str] = []
         tools: list[str] = []
         for message in replies:
-            # A message that ends in a tool call is the model narrating what it
-            # is about to do ("Quick disk check since root is small:"). Keeping
-            # it makes the reply read as a duplicate of the answer itself, so it
-            # is only used if the run produced no final answer text.
-            narrating = message.get("finish") == "tool-calls"
-            for item in message.get("content") or []:
+            content = message.get("content") or []
+            # A message that carries a tool call is the model narrating what it
+            # is about to do ("Quick disk check since root is small:"), however
+            # that step ends - a declined command finishes with "error". Keeping
+            # the narration makes the reply read as a duplicate of the answer,
+            # so it is only used if the run produced no answer text at all.
+            narrating = message.get("finish") == "tool-calls" or any(
+                self._is_tool(item) for item in content
+            )
+            for item in content:
                 if item.get("type") == "reasoning":
                     continue
                 if self._is_tool(item):
-                    # only report commands that actually ran to completion
                     state = item.get("state") or {}
-                    if state.get("status") == "completed":
-                        label = self._tool_label(item)
-                        if label:
-                            tools.append(label)
+                    if state.get("status") != "completed":
+                        continue
+                    # A command that ran and exited non-zero (a typo the model
+                    # then corrected, say) is noise in the footer, not evidence.
+                    exit_code = (state.get("metadata") or {}).get("exit")
+                    if isinstance(exit_code, int) and exit_code != 0:
+                        continue
+                    label = self._tool_label(item)
+                    if label:
+                        tools.append(label)
                 elif item.get("type") == "text" and (item.get("text") or "").strip():
                     (narrated if narrating else texts).append(item["text"].strip())
 
-        body = plain_text("\n\n".join(texts or narrated))
+        body = plain_text("\n\n".join(texts))
         if not body:
             if declined:
                 body = "🚫 You declined that, so nothing was run."
-            elif status == "failed":
-                body = "⚠️ That run ended without an answer - it hit an error."
             elif status == "interrupted":
                 body = "🛑 That run was interrupted."
+            elif status == "failed":
+                body = "⚠️ That run ended without an answer - it hit an error."
             else:
-                body = "I did not get an answer for that."
+                # no final answer text: the model only narrated around its tool
+                # calls, which is still better than reporting nothing
+                body = plain_text("\n\n".join(narrated)) or "I did not get an answer for that."
 
         if self.cfg.show_tools and tools:
-            commands = [_clip(t, 300) for t in dict.fromkeys(tools)]
-            commands = [c for c in commands if c]
-            if len(commands) == 1:
-                body += f"\n\nran: {commands[0]}"
-            elif commands:
-                body += "\n\nran:\n" + "\n".join(f"- {c}" for c in commands)
+            commands = [c for c in dict.fromkeys(_clip(t, 200) for t in tools) if c]
+            shown = commands[:3]
+            if len(shown) == 1:
+                body += f"\n\nran: {shown[0]}"
+            elif shown:
+                body += "\n\nran:\n" + "\n".join(f"- {c}" for c in shown)
+                if len(commands) > len(shown):
+                    body += f"\n(+{len(commands) - len(shown)} more)"
 
         self.send(accid, chat_id, body)
 
