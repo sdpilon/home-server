@@ -1,0 +1,37 @@
+name: chatbridge
+
+x-arcane:
+  icon: docker
+
+# Bridges a Delta Chat bot account to the OpenCode server running on the host.
+#
+# Host networking is required: the OpenCode background service binds to
+# 127.0.0.1 only, so the container must share the host network namespace.
+services:
+  chatbridge:
+    container_name: chatbridge
+    image: chatbridge:local
+    build:
+      context: .
+    restart: unless-stopped
+    # reap the deltachat-rpc-server child process cleanly
+    init: true
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      OPENCODE_URL: http://127.0.0.1:49374
+      OPENCODE_PASSWORD_FILE: /opencode/service.json
+      OPENCODE_SESSION_DIR: /app/data/projects/chatbridge/agent
+      DC_CONFIG_DIR: /data/dc
+      STATE_DB: /data/state.sqlite
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # Delta Chat account database + bridge state
+      - ./data:/data
+      # OpenCode service credentials (HTTP Basic: opencode / <password>)
+      - /home/sp/.config/opencode/service.json:/opencode/service.json:ro
+      # Mounted at the identical host path so OPENCODE_SESSION_DIR resolves the
+      # same inside and outside the container. The host's OpenCode service is
+      # what actually reads the agent definition from here.
+      - /app/data/projects/chatbridge:/app/data/projects/chatbridge:ro

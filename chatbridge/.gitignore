@@ -1,0 +1,6 @@
+# Delta Chat account database + bridge state (created at runtime)
+data/
+
+# local environment (also covered by the repo-root .gitignore)
+.env
+__pycache__/
