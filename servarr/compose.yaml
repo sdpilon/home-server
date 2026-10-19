@@ -4,6 +4,7 @@ x-arcane:
   icon: ${COMPOSE_PROJECT_NAME}
   urls:
     - qbittorrent.${DOMAIN}
+    - mousehole.${DOMAIN}
     - radarr.${DOMAIN}
     - sonarr.${DOMAIN}
     - prowlarr.${DOMAIN}
@@ -74,12 +75,20 @@ services:
     labels:
       <<: *traefik
       arcane.icon: gluetun
+      traefik.http.routers.qbittorrent.service: qbittorrent
+      traefik.http.routers.mousehole.service: mousehole
       # qBittorrent shares this network namespace, so its web UI route lives here
       traefik.http.routers.qbittorrent.tls: "true"
       traefik.http.routers.qbittorrent.entrypoints: https
       traefik.http.routers.qbittorrent.rule: Host(`qbittorrent.${DOMAIN}`)
       traefik.http.routers.qbittorrent.tls.certresolver: cloudflare
       traefik.http.services.qbittorrent.loadbalancer.server.port: "8080"
+      # Mousehole shares this network namespace too, so its route lives here
+      traefik.http.routers.mousehole.tls: "true"
+      traefik.http.routers.mousehole.entrypoints: https
+      traefik.http.routers.mousehole.rule: Host(`mousehole.${DOMAIN}`)
+      traefik.http.routers.mousehole.tls.certresolver: cloudflare
+      traefik.http.services.mousehole.loadbalancer.server.port: "5010"
 
 #############################################
 # QBITTORRENT (via VPN) + Port Updater
@@ -118,6 +127,31 @@ services:
       - ./update-port.sh:/update-port.sh:ro
     labels:
       - arcane.icon=alpine-linux
+
+#############################################
+# MOUSEHOLE - MAM Seedbox IP Updater
+#############################################
+  mousehole:
+    container_name: mousehole
+    image: tmmrtn/mousehole@sha256:a6ce4d1aaa05e82d5fa9df3a5887180203478239f26dfc8a704adf05ec3be805
+    restart: unless-stopped
+    logging: *logging
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    env_file:
+      - .env.mousehole.secrets
+    environment:
+      TZ: ${TZ}
+      MOUSEHOLE_ALLOWED_HOSTS: mousehole.${DOMAIN}
+      MOUSEHOLE_ALLOWED_ORIGINS: https://mousehole.${DOMAIN}
+      MOUSEHOLE_HTTPS_ONLY_COOKIES: "true"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/mousehole:/var/lib/mousehole
+    labels:
+      arcane.icon: mousehole
 
 #############################################
 # RADARR - Movies
