@@ -1,0 +1,60 @@
+name: &stack audiobookshelf
+
+x-arcane:
+  icon: *stack
+  urls:
+    - ${COMPOSE_PROJECT_NAME}.${DOMAIN}
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=${NAS_IP},rw,nfsvers=4
+      device: ":/media/HDD-Storage/servarr/"
+
+networks:
+  proxy:
+    external: true
+
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: ${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
+    ports:
+      - "13378:80"
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/${COMPOSE_PROJECT_NAME}/config:/config
+      - /docker/appdata/${COMPOSE_PROJECT_NAME}/metadata:/metadata
+      - type: volume
+        read_only: true
+        source: data
+        volume:
+          nocopy: true
+          subpath: media/audiobooks
+        target: /audiobooks
+      - type: volume
+        read_only: true
+        source: data
+        volume:
+          nocopy: true
+          subpath: media/books
+        target: /books
+      - type: volume
+        read_only: true
+        source: data
+        volume:
+          subpath: media/podcasts
+          nocopy: true
+        target: /podcasts
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80
