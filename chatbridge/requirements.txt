@@ -1,4 +1,0 @@
-# Delta Chat bot framework. Pulls in deltachat2[full], which pins the
-# matching deltachat-rpc-server binary wheel.
-deltabot-cli==9.1.0
-deltachat2[full]==2.58.0

@@ -3,4 +3,6 @@ data/
 
 # local environment (also covered by the repo-root .gitignore)
 .env
-__pycache__/
+
+# symlink to the project's agent directory, kept for pre-move OpenCode sessions
+agent

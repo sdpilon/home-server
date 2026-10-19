@@ -3,7 +3,9 @@ name: chatbridge
 x-arcane:
   icon: docker
 
-# Bridges a Delta Chat bot account to the OpenCode server running on the host.
+# Deployment for the chatbridge project. The source, agent definition and
+# Dockerfile live in the project repository at /home/sp/chatbridge; this stack
+# holds only the compose file, the .env and the Delta Chat account under ./data.
 #
 # Host networking is required: the OpenCode background service binds to
 # 127.0.0.1 only, so the container must share the host network namespace.
@@ -12,7 +14,7 @@ services:
     container_name: chatbridge
     image: chatbridge:local
     build:
-      context: .
+      context: /home/sp/chatbridge
     restart: unless-stopped
     # reap the deltachat-rpc-server child process cleanly
     init: true
@@ -22,7 +24,7 @@ services:
     environment:
       OPENCODE_URL: http://127.0.0.1:49374
       OPENCODE_PASSWORD_FILE: /opencode/service.json
-      OPENCODE_SESSION_DIR: /app/data/projects/chatbridge/agent
+      OPENCODE_SESSION_DIR: /home/sp/chatbridge/agent
       DC_CONFIG_DIR: /data/dc
       STATE_DB: /data/state.sqlite
     volumes:
@@ -31,7 +33,7 @@ services:
       - ./data:/data
       # OpenCode service credentials (HTTP Basic: opencode / <password>)
       - /home/sp/.config/opencode/service.json:/opencode/service.json:ro
-      # Mounted at the identical host path so OPENCODE_SESSION_DIR resolves the
-      # same inside and outside the container. The host's OpenCode service is
-      # what actually reads the agent definition from here.
-      - /app/data/projects/chatbridge:/app/data/projects/chatbridge:ro
+      # The host's OpenCode service reads the agent definition from here; the
+      # container only needs the path to exist, so mount it read-only at the
+      # same location rather than sharing the whole project directory.
+      - /home/sp/chatbridge/agent:/home/sp/chatbridge/agent:ro
