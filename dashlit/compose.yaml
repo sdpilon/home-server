@@ -1,0 +1,46 @@
+name: &stack dashlit
+
+x-arcane:
+  icon: *stack
+  urls:
+    - ${COMPOSE_PROJECT_NAME}.${DOMAIN}
+
+networks:
+  proxy:
+    external: true
+
+services:
+  dashlit:
+    image: ghcr.io/codewec/dashlit:${DASHLIT_TAG:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME}
+    pull_policy: always
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      JWT_SECRET: '${JWT_SECRET:?JWT_SECRET must be set}'
+      INITIAL_ADMIN_USERNAME: '${INITIAL_ADMIN_USERNAME:-}'
+      INITIAL_ADMIN_PASSWORD: '${INITIAL_ADMIN_PASSWORD:-}'
+      OIDC_ISSUER: '${OIDC_ISSUER:-}'
+      OIDC_CLIENT_ID: '${OIDC_CLIENT_ID:-}'
+      OIDC_CLIENT_SECRET: '${OIDC_CLIENT_SECRET:-}'
+      OIDC_REDIRECT_URL: '${OIDC_REDIRECT_URL:-}'
+      OIDC_BUTTON_TITLE: '${OIDC_BUTTON_TITLE:-Sign in with OIDC}'
+      OIDC_INSECURE_SKIP_TLS_VERIFY: '${OIDC_INSECURE_SKIP_TLS_VERIFY:-false}'
+      DISABLE_PASSWORD_REGISTRATION: '${DISABLE_PASSWORD_REGISTRATION:-false}'
+      DISABLE_OIDC_REGISTRATION: '${DISABLE_OIDC_REGISTRATION:-false}'
+      DISABLE_OIDC_USER_MERGE: '${DISABLE_OIDC_USER_MERGE:-false}'
+      DISABLE_PASSWORD_LOGIN: '${DISABLE_PASSWORD_LOGIN:-false}'
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - dashlit-data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${DOMAIN}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8080
+
+volumes:
+  dashlit-data:
