@@ -48,7 +48,7 @@ services:
 
   arcane:
     container_name: *stack
-    image: ghcr.io/getarcaneapp/arcane:latest
+    image: ghcr.io/getarcaneapp/arcane:v2.17.0
     env_file:
       - .env.secrets
     restart: unless-stopped
