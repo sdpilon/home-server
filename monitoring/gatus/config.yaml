@@ -104,15 +104,6 @@ endpoints:
     alerts:
       - type: ntfy
 
-  - name: repo-rater
-    group: routine
-    url: "https://repo-rater.${DOMAIN}"
-    interval: 60s
-    conditions:
-      - "[STATUS] == 200"
-    alerts:
-      - type: ntfy
-
   - name: qbittorrent
     group: routine
     url: "https://qbittorrent.${DOMAIN}"
@@ -143,15 +134,6 @@ endpoints:
   - name: lidarr
     group: routine
     url: "https://lidarr.${DOMAIN}"
-    interval: 60s
-    conditions:
-      - "[STATUS] == 200"
-    alerts:
-      - type: ntfy
-
-  - name: bazarr
-    group: routine
-    url: "https://bazarr.${DOMAIN}"
     interval: 60s
     conditions:
       - "[STATUS] == 200"
