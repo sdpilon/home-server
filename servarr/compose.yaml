@@ -4,6 +4,7 @@ x-arcane:
   icon: ${COMPOSE_PROJECT_NAME}
   urls:
     - qbittorrent.${DOMAIN}
+    - qbit-priority.${DOMAIN}
     - mousehole.${DOMAIN}
     - radarr.${DOMAIN}
     - sonarr.${DOMAIN}
@@ -127,6 +128,46 @@ services:
       - ./update-port.sh:/update-port.sh:ro
     labels:
       - arcane.icon=alpine-linux
+
+#############################################
+# QBIT-PRIORITY - seed priority controller
+#############################################
+  qbit-priority:
+    container_name: qbit-priority
+    image: python:3.12-alpine@sha256:b658b05ce9c4eb97ec6fc19424818a1f31993659c2b505a532f470e83807815d
+    restart: unless-stopped
+    logging: *logging
+    user: "1000:1000"
+    depends_on:
+      - gluetun
+      - qbittorrent
+    env_file:
+      - .env.qbit-priority.secrets
+    environment:
+      QBITTORRENT_URL: http://gluetun:8080
+      ROTATE_COUNT: ${ROTATE_COUNT:-10}
+      ROTATE_INTERVAL: ${ROTATE_INTERVAL:-21600}
+      TZ: ${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # Source repo; runtime state stays under ./qbit-priority/state.
+      - /home/sp/orca/projects/qbit-priority:/app:ro
+      - ./qbit-priority/state:/state
+    command: ["python3", "/app/qbit-priority.py", "--loop", "--web", "--port", "8081"]
+    expose:
+      - "8081"
+    networks:
+      - default
+      - proxy
+    labels:
+      - arcane.icon=python
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.qbit-priority.tls=true
+      - traefik.http.routers.qbit-priority.entrypoints=https
+      - traefik.http.routers.qbit-priority.rule=Host(`qbit-priority.${DOMAIN}`)
+      - traefik.http.routers.qbit-priority.tls.certresolver=cloudflare
+      - traefik.http.services.qbit-priority.loadbalancer.server.port=8081
 
 #############################################
 # MOUSEHOLE - MAM Seedbox IP Updater

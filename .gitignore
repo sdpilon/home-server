@@ -13,6 +13,9 @@ dynamic*.yml
 # Servarr: ./servarr/qbit-hardlink/ runtime log
 servarr/qbit-hardlink/*.log
 
+# Servarr: qbit-priority runtime state (source lives in its own repository)
+servarr/qbit-priority/
+
 # Environment files
 .env*
 
