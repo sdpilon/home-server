@@ -109,6 +109,14 @@ services:
       - /docker/appdata/qbittorrent:/config
       - /data:/data
       - ./qbit-hardlink:/scripts
+    healthcheck:
+      # Query the WebUI API rather than just the port. 401/403 still count as up
+      # in case WebUI auth is ever re-enabled for localhost.
+      test: ["CMD-SHELL", "curl -sS --max-time 5 -o /dev/null -w '%{http_code}' \"http://localhost:$${WEBUI_PORT:-8080}/api/v2/app/version\" | grep -qE '^(200|401|403)$'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   qb-port-sync:
     container_name: qb-port-sync
@@ -139,8 +147,10 @@ services:
     logging: *logging
     user: "1000:1000"
     depends_on:
-      - gluetun
-      - qbittorrent
+      gluetun:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
     env_file:
       - .env.qbit-priority.secrets
     environment:
@@ -293,16 +303,6 @@ services:
       - /docker/appdata/bookshelf:/config
       - /data:/data
 
-# Optional: Add proxy for MAM
-  # flaresolverr:
-  #   image: ghcr.io/flaresolverr/flaresolverr:latest
-  #   container_name: flaresolverr
-  #   environment:
-  #     - LOG_LEVEL=info
-  #   ports:
-  #     - 8191:8191
-  #   restart: unless-stopped
-
   # Reached by readarr over arr_network at http://rreading-glasses:8788 (no host port needed)
   rreading-glasses:
     depends_on:
@@ -336,28 +336,6 @@ services:
       start_period: 10s
     volumes:
       - rreading_glasses_data:/var/lib/postgresql/data
-
-  # seerr:
-  #   <<: *proxy-common
-  #   image: ghcr.io/seerr-team/seerr:${SEER_RELEASE_TAG:-latest}
-  #   container_name: seerr
-  #   restart: unless-stopped
-  #   init: true
-  #   ports:
-  #     - ${SEERR_PORT:-5055}:5055
-  #   environment:
-  #     TZ: ${TZ}
-  #     #LOG_LEVEL: debug
-  #   volumes:
-  #     - /docker/appdata/config:/app/config
-  #   healthcheck:
-  #     test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
-  #     start_period: 20s
-  #     timeout: 3s
-  #     interval: 15s
-  #     retries: 3
-  #   labels:
-  #     arcane.icon: seerr
 
 volumes:
   rreading_glasses_data:
