@@ -24,3 +24,10 @@ servarr/qbit-priority/
 
 # vscode
 projects.code-workspace
+
+# Local pre-change backups
+*.bak.*
+backups
+
+# monitoring
+baselines
