@@ -24,19 +24,11 @@ http:
       tls:
         certResolver: cloudflare
 
-    nas-web:
+    zimbian:
       rule: "Host(`nas.example.com`)"
       entryPoints:
         - https
-      service: nas-web
-      tls:
-        certResolver: cloudflare
-
-    nas-ttyd:
-      rule: "Host(`ttyd.nas.example.com`)"
-      entryPoints:
-        - https
-      service: nas-ttyd
+      service: zimbian
       tls:
         certResolver: cloudflare
 
@@ -58,15 +50,11 @@ http:
           - url: "https://docker-vm.my-tailnet.ts.net:9090"
         serversTransport: insecure-transport
 
-    nas-web:
+    zimbian:
       loadBalancer:
         servers:
-          - url: "http://nas.my-tailnet.ts.net"
-
-    nas-ttyd:
-      loadBalancer:
-        servers:
-          - url: "http://nas.my-tailnet.ts.net:2222"
+          - url: "https://nas.my-tailnet.ts.net:9090"
+        serversTransport: insecure-transport
 
   serversTransports:
     insecure-transport:
