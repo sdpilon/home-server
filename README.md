@@ -1,6 +1,6 @@
 # Docker VM Home Server Configuration
 
-This is my personal Docker stacks setup.
+This is my personal Docker Compose setup: one directory per stack, running on a Debian 13 (trixie) VM in Proxmox.
 
 > [!CAUTION]
 > The setup shown in this repository isn't meant to be exposed to the public internet. Several services have no authentication of their own and rely entirely on the network being private (I deploy it behind Tailscale).
@@ -8,8 +8,9 @@ This is my personal Docker stacks setup.
 
 ## Overview
 
-- Running on a Debian 13 (bookworm) VM in Proxmox
-- Accesses storage over NFS mounts on my NAS
+- Debian 13 (trixie) VM on Proxmox, managed with Docker Compose.
+- Storage: NFS mounts from my NAS.
+- Ingress: Traefik on ports 80/443 with TLS via the Cloudflare DNS-01 resolver. App hostnames use `*.vm1.spcloud.space`, which resolve to the host's Tailscale IP, so the services are tailnet-only. Nothing is intentionally public.
 - Uses [Arcane](https://getarcane.app/) for Docker Compose management.
   - It's actually useful on the scale I'm currently working at, i.e., a single environment.
   - It has the right level of control for me, where I can directly edit the `compose.yaml`s (or any files now after a recent update).
@@ -19,12 +20,22 @@ This is my personal Docker stacks setup.
 
 ## Stacks & Services:
 
+12 stacks / 32 containers. (The Jellyfin Tizen installer only runs with the `tv-app` profile.)
 
 - `arcane` -- The arcane web UI for managing Docker Compose stacks.
   - 2 containers: arcane, docker socket proxy
 
-- `bentopdf` -- Tools for working with PDF documents, but local. I mainly use it for splitting and merging. Smaller docker image size compared to sterlingPDF.
+- `audiobookshelf` -- Audiobook and podcast server.
+  - 1 container: audiobookshelf
+
+- `bentopdf` -- Tools for working with PDF documents, but local. I mainly use it for splitting and merging. Smaller docker image size compared to Stirling PDF.
   - 1 container: bentopdf
+
+- `chatbridge` -- Delta Chat bridge to the local OpenCode service. This directory is deployment-only; the source lives in its own repository (see `chatbridge/README.md`).
+  - 1 container: chatbridge
+
+- `dashlit` -- Self-hosted bookmark dashboard.
+  - 1 container: dashlit
 
 - `immich` -- The main photo management app I use every day.
   - 4 containers: immich app, immich Machine learning backend, postgres database, redis cache
@@ -35,26 +46,50 @@ This is my personal Docker stacks setup.
 - `jellyfin` -- Media server, for serving media.
   - 2 containers: jellyfin app, tizen tv app installer/updater (only for docker profile: tv-app)
 
-- `monitoring` -- ntfy for push notifications. Gatus for declarative uptime monitoring, alerts through ntfy.
-  - 2 containers: ntfy, gatus
+- `monitoring` -- Prometheus/Grafana dashboards, ntfy push notifications, and Gatus uptime checks. Grafana dashboards, datasources, and alert rules are provisioned from `monitoring/grafana/`; uptime checks live in `monitoring/gatus/config.yaml`.
+  - 6 containers: ntfy, gatus, prometheus, grafana, qbittorrent-exporter, node-exporter
 
 - `omnitools` -- Same story as it-tools, but more general purpose.
   - 1 container: omnitools
 
-- `servarr` -- My media management and torrenting stack.
-  - 8 containers: sonarr, radarr, lidarr, bazarr, qbittorrent, prowlarr, gluetun, qb port updater
+- `servarr` -- My media management and torrenting stack: the VPN boundary, qBittorrent, the *arr apps, and the seed priority controller.
+  - 12 containers: gluetun, qbittorrent, qb-port-sync, qbit-priority, mousehole, radarr, sonarr, lidarr, prowlarr, readarr, rreading-glasses, rreading-glasses-db
 
-- `traefik` -- Reverse proxy and SSL termination for my services. Moved from `nginx-proxy-manager` because the config is declarative and lives in each service's compose file, for containers anyway. Some are outside of this VM, and are configured separately.
+- `traefik` -- Reverse proxy and SSL termination for my services. Moved from `nginx-proxy-manager` because the config is declarative and lives in each service's compose file, for containers anyway. Some are outside of this VM, and are configured separately through the file provider (`traefik/data/dynamic/`).
   - 1 container: traefik
 
 ## Setup
 
-Clone the repo to the directory where you want your Compose projects to live.
+Prerequisites: Docker with Compose v2, plus the external network every stack shares with Traefik:
 
-For each service, copy the `*.example` file(s) and remove the `.example` suffix, then fill in the values for the environment.
+```sh
+docker network create proxy
+```
 
-For example, to set up `immich`,
-- copy `immich/.env.example` to `immich/.env` and fill in the values for the environment
-- copy `immich/secrets/postgres_username.txt.example` to `immich/secrets/postgres_username.txt` and fill in the real username
-- copy `immich/secrets/postgres_password.txt.example` to `immich/secrets/postgres_password.txt` and fill in the real password
-- run `docker compose up -d`
+Copy the `*.example` files for the stack you're setting up, remove the `.example` suffix, and fill in the values. Each stack reads its configuration from a gitignored `.env`:
+
+```sh
+cp <stack>/.env.example <stack>/.env
+```
+
+Some stacks need additional files:
+
+- `immich/secrets/postgres_username.txt` and `postgres_password.txt`
+- `traefik/cf_api_token.txt` (Cloudflare API token for ACME)
+- `servarr/.env.*.secrets` (VPN, Mousehole, qbit-priority, rreading-glasses)
+- `monitoring/.env` (Grafana admin password, qBittorrent API key)
+- `chatbridge/.env` plus its `./data` Delta Chat account
+
+For example, to set up `immich`:
+
+```sh
+cp immich/.env.example immich/.env
+# fill in immich/.env
+cp immich/secrets/postgres_username.txt.example immich/secrets/postgres_username.txt
+cp immich/secrets/postgres_password.txt.example immich/secrets/postgres_password.txt
+# fill in the real values
+docker compose -f immich/compose.yaml config --quiet
+docker compose -f immich/compose.yaml up -d
+```
+
+Start `traefik` before the stacks that rely on it for HTTPS.
