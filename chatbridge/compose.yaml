@@ -22,15 +22,20 @@ services:
     env_file:
       - .env
     environment:
+      # Wide enough that rich does not wrap the Delta Chat invite link in `logs`
+      COLUMNS: "1000"
       OPENCODE_URL: http://127.0.0.1:49374
       OPENCODE_PASSWORD_FILE: /opencode/service.json
       OPENCODE_SESSION_DIR: /home/sp/chatbridge/agent
+      DEPLOYMENT_CONTEXT_FILE: /context/deployment-context.json
       DC_CONFIG_DIR: /data/dc
       STATE_DB: /data/state.sqlite
     volumes:
       - /etc/localtime:/etc/localtime:ro
       # Delta Chat account database + bridge state
       - ./data:/data
+      # Operator-owned deployment facts; never committed to the source repo.
+      - ./deployment-context.json:/context/deployment-context.json:ro
       # OpenCode service credentials (HTTP Basic: opencode / <password>)
       - /home/sp/.config/opencode/service.json:/opencode/service.json:ro
       # The host's OpenCode service reads the agent definition from here; the

@@ -4,5 +4,7 @@ data/
 # local environment (also covered by the repo-root .gitignore)
 .env
 
+deployment-context.json
+
 # symlink to the project's agent directory, kept for pre-move OpenCode sessions
 agent

@@ -20,7 +20,6 @@ What lives here:
 | `.env` | your configuration: senders, model, bridge behaviour (untracked) |
 | `.env.example` | template for the above |
 | `./data` | the Delta Chat account and the chat→session map (untracked) |
-| `agent` | symlink to the project's agent directory, kept so OpenCode sessions created before the move still resolve their agent definition |
 
 `./data` is the bot's identity: it holds the account's private keys. Back it up or
 lose the address.
