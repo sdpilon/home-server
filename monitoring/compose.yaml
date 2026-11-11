@@ -5,9 +5,14 @@ x-arcane:
   urls:
     - ntfy.${DOMAIN}
     - gatus.${DOMAIN}
+    - grafana.${DOMAIN}
 
 networks:
+  default:
+    name: monitoring
   proxy:
+    external: true
+  arr_network:
     external: true
 
 volumes:
@@ -55,3 +60,93 @@ services:
       - "traefik.http.routers.gatus.tls.certresolver=cloudflare"
       - "traefik.http.routers.gatus.rule=Host(`gatus.${DOMAIN}`)"
       - "traefik.http.services.gatus.loadbalancer.server.port=8080"
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    user: "1000:1000"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.size=2GB"
+      - "--web.enable-lifecycle"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /docker/appdata/monitoring/prometheus:/prometheus
+    networks:
+      - default
+    labels:
+      - "arcane.icon=prometheus"
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana-oss:latest
+    restart: unless-stopped
+    user: "472:472"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_PLUGINS_PREINSTALL_DISABLED=true
+      - GF_SERVER_ROOT_URL=https://grafana.${DOMAIN}
+      - GF_SERVER_DOMAIN=grafana.${DOMAIN}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/appdata/monitoring/grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - default
+      - proxy
+    labels:
+      - "arcane.icon=grafana"
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.grafana.entrypoints=https"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=cloudflare"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN}`)"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+  qbittorrent-exporter:
+    container_name: qbittorrent-exporter
+    image: ghcr.io/martabal/qbittorrent-exporter:latest
+    restart: unless-stopped
+    environment:
+      - QBITTORRENT_BASE_URL=http://gluetun:8080
+      - QBITTORRENT_API_KEY=${QBITTORRENT_API_KEY}
+      - LOG_LEVEL=INFO
+      - ENABLE_TRACKER=true
+      - ENABLE_HIGH_CARDINALITY=false
+    networks:
+      - default
+      - arr_network
+    labels:
+      - "arcane.icon=qbittorrent"
+
+  node-exporter:
+    container_name: node-exporter
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    pid: host
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/host"
+      - "--collector.mountstats"
+      - "--collector.nfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+      - /data:/data:ro
+    networks:
+      - default
+    labels:
+      - "arcane.icon=prometheus"

@@ -1,0 +1,24 @@
+apiVersion: 1
+contactPoints:
+- orgId: 1
+  name: ntfy-routine
+  receivers:
+  - uid: ntfy-routine
+    type: webhook
+    disableResolveMessage: false
+    settings:
+      url: http://ntfy:80/
+      httpMethod: POST
+      payload:
+        template: '{"topic":"homelab-routine","title":"{{ .CommonLabels.alertname }} ({{ .Status }})","message":"{{ .CommonAnnotations.summary }}{{ if .Alerts.Firing }} ({{ len .Alerts.Firing }} firing){{ end }}","priority":3,"tags":["grafana","warning"],"click":"{{ .ExternalURL }}d/nas-health"}'
+- orgId: 1
+  name: ntfy-critical
+  receivers:
+  - uid: ntfy-critical
+    type: webhook
+    disableResolveMessage: false
+    settings:
+      url: http://ntfy:80/
+      httpMethod: POST
+      payload:
+        template: '{"topic":"homelab-critical","title":"{{ .CommonLabels.alertname }} ({{ .Status }})","message":"{{ .CommonAnnotations.summary }}{{ if .Alerts.Firing }} ({{ len .Alerts.Firing }} firing){{ end }}","priority":5,"tags":["grafana","rotating_light"],"click":"{{ .ExternalURL }}d/nas-health"}'

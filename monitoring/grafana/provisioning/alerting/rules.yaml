@@ -1,0 +1,845 @@
+apiVersion: 1
+groups:
+- orgId: 1
+  name: qBittorrent / NAS
+  folder: Homelab
+  interval: 1m
+  rules:
+  - uid: qbt_queue_warning
+    title: qBittorrent disk queue high
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: avg_over_time(qbittorrent_global_average_time_queue[5m])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 55000
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 10m
+    annotations:
+      summary: qBittorrent disk queue above 55 s for 10 minutes
+    labels:
+      severity: warning
+      component: qbittorrent
+    isPaused: false
+  - uid: qbt_queue_critical
+    title: qBittorrent disk queue critical
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: avg_over_time(qbittorrent_global_average_time_queue[5m])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 90000
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: qBittorrent disk queue above 90 s for 5 minutes
+    labels:
+      severity: critical
+      component: qbittorrent
+    isPaused: false
+  - uid: qbt_io_stalled
+    title: qBittorrent IO stalled high
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: rate(node_pressure_io_stalled_seconds_total[5m]) * 100
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 60
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 15m
+    annotations:
+      summary: IO stalled above 60% for 15 minutes
+    labels:
+      severity: warning
+      component: nas
+    isPaused: false
+  - uid: node_iowait_high
+    title: Host iowait high
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: avg(rate(node_cpu_seconds_total{mode="iowait"}[5m])) * 100
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 60
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 15m
+    annotations:
+      summary: Host iowait above 60% for 15 minutes
+    labels:
+      severity: warning
+      component: nas
+    isPaused: false
+  - uid: nas_data_free_low
+    title: /data free space low
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: node_filesystem_avail_bytes{mountpoint="/data"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 200000000000
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: /data has less than 200 GB free
+    labels:
+      severity: critical
+      component: nas
+    isPaused: false
+  - uid: qbt_exporter_down
+    title: qBittorrent exporter down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: up{job="qbittorrent"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: qBittorrent exporter has been down for 5 minutes
+    labels:
+      severity: critical
+      component: monitoring
+    isPaused: false
+  - uid: node_exporter_down
+    title: Node exporter down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: up{job="node"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: Node exporter has been down for 5 minutes
+    labels:
+      severity: critical
+      component: monitoring
+    isPaused: false
+- orgId: 1
+  name: NAS host
+  folder: Homelab
+  interval: 1m
+  rules:
+  - uid: nas_node_down
+    title: NAS node exporter down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: up{job="nas"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: Alerting
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: NAS node exporter has been down for 5 minutes
+    labels:
+      severity: critical
+      component: nas
+    isPaused: false
+  - uid: nas_smart_exporter_down
+    title: NAS SMART exporter down
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: up{job="nas-smart"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: Alerting
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: NAS SMART exporter has been down for 5 minutes
+    labels:
+      severity: critical
+      component: nas
+    isPaused: false
+  - uid: nas_smart_health_failed
+    title: NAS SMART health failed
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: smartctl_device_smart_status{job="nas-smart",device="sdb"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: Alerting
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: NAS HDD SMART overall health is not PASSED
+    labels:
+      severity: critical
+      component: nas
+    isPaused: false
+  - uid: nas_smart_reallocated
+    title: NAS HDD reallocated sectors
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="Reallocated_Sector_Ct",attribute_value_type="raw"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: NAS HDD has reallocated sectors; back up and plan replacement
+    labels:
+      severity: critical
+      component: nas
+    isPaused: false
+  - uid: nas_smart_pending
+    title: NAS HDD pending sectors
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="Current_Pending_Sector",attribute_value_type="raw"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: NAS HDD has sectors pending reallocation; back up and plan replacement
+    labels:
+      severity: critical
+      component: nas
+    isPaused: false
+  - uid: nas_smart_uncorrectable
+    title: NAS HDD offline uncorrectable sectors
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="Offline_Uncorrectable",attribute_value_type="raw"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: NAS HDD has offline uncorrectable sectors; back up and plan replacement
+    labels:
+      severity: critical
+      component: nas
+    isPaused: false
+  - uid: nas_smart_crc_increase
+    title: NAS HDD CRC errors increasing
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 21600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: delta(smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="UDMA_CRC_Error_Count",attribute_value_type="raw"}[6h])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 10m
+    annotations:
+      summary: NAS HDD UDMA CRC error count increased in the last 6 hours; check the SATA cable
+    labels:
+      severity: warning
+      component: nas
+    isPaused: false
+  - uid: nas_hdd_temperature_high
+    title: NAS HDD temperature high
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: smartctl_device_temperature{job="nas-smart",device="sdb",temperature_type="current"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 50
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 10m
+    annotations:
+      summary: NAS HDD temperature is above 50 C
+    labels:
+      severity: warning
+      component: nas
+    isPaused: false
+  - uid: nas_hdd_space_low
+    title: NAS HDD space low
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: 100 * (1 - node_filesystem_avail_bytes{job="nas",mountpoint="/media/HDD-Storage"} / node_filesystem_size_bytes{job="nas",mountpoint="/media/HDD-Storage"})
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 85
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 10m
+    annotations:
+      summary: NAS HDD-Storage is more than 85% full
+    labels:
+      severity: warning
+      component: nas
+    isPaused: false
+  - uid: nas_btrfs_errors
+    title: NAS btrfs device errors
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: sum(increase(node_btrfs_device_errors_total{job="nas"}[10m]))
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: NoData
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: NAS btrfs reported device errors in the last 10 minutes
+    labels:
+      severity: warning
+      component: nas
+    isPaused: false

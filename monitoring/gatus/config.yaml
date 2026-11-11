@@ -113,6 +113,24 @@ endpoints:
     alerts:
       - type: ntfy
 
+  - name: grafana
+    group: routine
+    url: "https://grafana.${DOMAIN}/api/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
+  - name: qbit-priority
+    group: routine
+    url: "https://qbit-priority.${DOMAIN}/healthz"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
+
   - name: radarr
     group: routine
     url: "https://radarr.${DOMAIN}"
@@ -176,20 +194,11 @@ endpoints:
     alerts:
       - type: ntfy
 
-  - name: zimablade-web
+  - name: zimbian
     group: routine
-    url: "https://zimablade.${BASE_DOMAIN}"
+    url: "https://zimbian.${BASE_DOMAIN}"
     interval: 60s
     conditions:
-      - "[STATUS] == 200"
-    alerts:
-      - type: ntfy
-
-  - name: zimablade-ttyd
-    group: routine
-    url: "https://ttyd.zimablade.${BASE_DOMAIN}"
-    interval: 60s
-    conditions:
-      - "[STATUS] == 200"
+      - "[STATUS] < 400"
     alerts:
       - type: ntfy
