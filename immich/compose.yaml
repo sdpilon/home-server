@@ -26,7 +26,7 @@ volumes:
     driver_opts:
       type: nfs
       o: addr=${NAS_IP},rw,nfsvers=4
-      device: ":/media/SSD-Storage/Data/Gallery/immich"
+      device: ":/media/HDD-Storage/immich"
   immich_pgdata:
     external: true
   immich_mlmodels:
