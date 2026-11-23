@@ -834,7 +834,7 @@ groups:
         expression: A
         refId: C
         type: threshold
-    noDataState: NoData
+    noDataState: OK
     execErrState: Error
     for: 5m
     annotations:
