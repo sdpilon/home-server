@@ -462,7 +462,7 @@ groups:
       datasourceUid: prometheus
       model:
         editorMode: code
-        expr: smartctl_device_smart_status{job="nas-smart",device="sdb"}
+        expr: smartctl_device_smart_status{job="nas-smart"} * on(instance, device) group_left(serial_number) smartctl_device{job="nas-smart",serial_number="ZW64GGK7"}
         instant: true
         intervalMs: 1000
         legendFormat: __auto
@@ -511,7 +511,7 @@ groups:
       datasourceUid: prometheus
       model:
         editorMode: code
-        expr: smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="Reallocated_Sector_Ct",attribute_value_type="raw"}
+        expr: smartctl_device_attribute{job="nas-smart",attribute_name="Reallocated_Sector_Ct",attribute_value_type="raw"} * on(instance, device) group_left(serial_number) smartctl_device{job="nas-smart",serial_number="ZW64GGK7"}
         instant: true
         intervalMs: 1000
         legendFormat: __auto
@@ -560,7 +560,7 @@ groups:
       datasourceUid: prometheus
       model:
         editorMode: code
-        expr: smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="Current_Pending_Sector",attribute_value_type="raw"}
+        expr: smartctl_device_attribute{job="nas-smart",attribute_name="Current_Pending_Sector",attribute_value_type="raw"} * on(instance, device) group_left(serial_number) smartctl_device{job="nas-smart",serial_number="ZW64GGK7"}
         instant: true
         intervalMs: 1000
         legendFormat: __auto
@@ -609,7 +609,7 @@ groups:
       datasourceUid: prometheus
       model:
         editorMode: code
-        expr: smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="Offline_Uncorrectable",attribute_value_type="raw"}
+        expr: smartctl_device_attribute{job="nas-smart",attribute_name="Offline_Uncorrectable",attribute_value_type="raw"} * on(instance, device) group_left(serial_number) smartctl_device{job="nas-smart",serial_number="ZW64GGK7"}
         instant: true
         intervalMs: 1000
         legendFormat: __auto
@@ -658,7 +658,7 @@ groups:
       datasourceUid: prometheus
       model:
         editorMode: code
-        expr: delta(smartctl_device_attribute{job="nas-smart",device="sdb",attribute_name="UDMA_CRC_Error_Count",attribute_value_type="raw"}[6h])
+        expr: delta(smartctl_device_attribute{job="nas-smart",attribute_name="UDMA_CRC_Error_Count",attribute_value_type="raw"}[6h]) * on(instance, device) group_left(serial_number) smartctl_device{job="nas-smart",serial_number="ZW64GGK7"}
         instant: true
         intervalMs: 1000
         legendFormat: __auto
@@ -707,7 +707,7 @@ groups:
       datasourceUid: prometheus
       model:
         editorMode: code
-        expr: smartctl_device_temperature{job="nas-smart",device="sdb",temperature_type="current"}
+        expr: smartctl_device_temperature{job="nas-smart",temperature_type="current"} * on(instance, device) group_left(serial_number) smartctl_device{job="nas-smart",serial_number="ZW64GGK7"}
         instant: true
         intervalMs: 1000
         legendFormat: __auto

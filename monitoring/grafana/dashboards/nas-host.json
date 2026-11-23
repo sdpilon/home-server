@@ -281,7 +281,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_temperature{job=\"nas-smart\",device=\"sdb\",temperature_type=\"current\"}",
+          "expr": "smartctl_device_temperature{job=\"nas-smart\",temperature_type=\"current\"} * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "HDD temperature"
         }
       ]
@@ -359,7 +359,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_smart_status{job=\"nas-smart\",device=\"sdb\"}",
+          "expr": "smartctl_device_smart_status{job=\"nas-smart\"} * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "SMART status"
         }
       ]
@@ -699,7 +699,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(node_disk_read_bytes_total{job=\"nas\",device=\"sdb\"}[5m])",
+          "expr": "rate(node_disk_read_bytes_total{job=\"nas\"}[5m]) * on(instance, device) group_left(serial) node_disk_info{job=\"nas\",serial=\"ZW64GGK7\"}",
           "legendFormat": "read"
         },
         {
@@ -708,7 +708,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(node_disk_written_bytes_total{job=\"nas\",device=\"sdb\"}[5m])",
+          "expr": "rate(node_disk_written_bytes_total{job=\"nas\"}[5m]) * on(instance, device) group_left(serial) node_disk_info{job=\"nas\",serial=\"ZW64GGK7\"}",
           "legendFormat": "write"
         }
       ]
@@ -783,7 +783,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 * rate(node_disk_io_time_seconds_total{job=\"nas\",device=\"sdb\"}[5m])",
+          "expr": "100 * (rate(node_disk_io_time_seconds_total{job=\"nas\"}[5m]) * on(instance, device) group_left(serial) node_disk_info{job=\"nas\",serial=\"ZW64GGK7\"})",
           "legendFormat": "utilization"
         }
       ]
@@ -907,7 +907,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_attribute{job=\"nas-smart\",device=\"sdb\",attribute_name=\"Reallocated_Sector_Ct\",attribute_value_type=\"raw\"}",
+          "expr": "smartctl_device_attribute{job=\"nas-smart\",attribute_name=\"Reallocated_Sector_Ct\",attribute_value_type=\"raw\"} * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "Reallocated sectors"
         }
       ]
@@ -969,7 +969,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_attribute{job=\"nas-smart\",device=\"sdb\",attribute_name=\"Current_Pending_Sector\",attribute_value_type=\"raw\"}",
+          "expr": "smartctl_device_attribute{job=\"nas-smart\",attribute_name=\"Current_Pending_Sector\",attribute_value_type=\"raw\"} * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "Pending sectors"
         }
       ]
@@ -1031,7 +1031,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_attribute{job=\"nas-smart\",device=\"sdb\",attribute_name=\"Offline_Uncorrectable\",attribute_value_type=\"raw\"}",
+          "expr": "smartctl_device_attribute{job=\"nas-smart\",attribute_name=\"Offline_Uncorrectable\",attribute_value_type=\"raw\"} * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "Offline uncorrectable"
         }
       ]
@@ -1097,7 +1097,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_attribute{job=\"nas-smart\",device=\"sdb\",attribute_name=\"UDMA_CRC_Error_Count\",attribute_value_type=\"raw\"}",
+          "expr": "smartctl_device_attribute{job=\"nas-smart\",attribute_name=\"UDMA_CRC_Error_Count\",attribute_value_type=\"raw\"} * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "UDMA CRC errors"
         }
       ]
@@ -1155,7 +1155,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_power_on_seconds{job=\"nas-smart\",device=\"sdb\"} / 3600",
+          "expr": "(smartctl_device_power_on_seconds{job=\"nas-smart\"} / 3600) * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "Power-on hours"
         }
       ]
@@ -1290,7 +1290,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "smartctl_device_temperature{job=\"nas-smart\",device=\"sdb\",temperature_type=\"current\"}",
+          "expr": "smartctl_device_temperature{job=\"nas-smart\",temperature_type=\"current\"} * on(instance, device) group_left(serial_number) smartctl_device{job=\"nas-smart\",serial_number=\"ZW64GGK7\"}",
           "legendFormat": "temperature"
         }
       ]
@@ -1426,7 +1426,8 @@
     {
       "id": 22,
       "type": "stat",
-      "title": "SSD used",
+      "description": "Only populated while the weekly USB mirror is mounted.",
+  "title": "Mirror used",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1484,8 +1485,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 * (1 - node_filesystem_avail_bytes{job=\"nas\",mountpoint=\"/media/SSD-Storage\"} / node_filesystem_size_bytes{job=\"nas\",mountpoint=\"/media/SSD-Storage\"})",
-          "legendFormat": "SSD used"
+          "expr": "100 * (1 - node_filesystem_avail_bytes{job=\"nas\",mountpoint=\"/mnt/usb-backup\"} / node_filesystem_size_bytes{job=\"nas\",mountpoint=\"/mnt/usb-backup\"})",
+          "legendFormat": "Mirror used"
         }
       ]
     }
