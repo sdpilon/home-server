@@ -843,3 +843,103 @@ groups:
       severity: warning
       component: nas
     isPaused: false
+
+  - uid: docker_data_space_high
+    title: Docker data volume over 80%
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: '100 * (1 - node_filesystem_avail_bytes{job="node",mountpoint=~"/var/lib/containerd|/docker/appdata"} / node_filesystem_size_bytes{job="node",mountpoint=~"/var/lib/containerd|/docker/appdata"})'
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 80
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: OK
+    execErrState: Error
+    for: 10m
+    annotations:
+      summary: '{{ $labels.mountpoint }} is over 80% full'
+    labels:
+      severity: warning
+      component: docker
+    isPaused: false
+
+  - uid: docker_data_space_critical
+    title: Docker data volume over 90%
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        editorMode: code
+        expr: '100 * (1 - node_filesystem_avail_bytes{job="node",mountpoint=~"/var/lib/containerd|/docker/appdata"} / node_filesystem_size_bytes{job="node",mountpoint=~"/var/lib/containerd|/docker/appdata"})'
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        range: false
+        refId: A
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 90
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        refId: C
+        type: threshold
+    noDataState: OK
+    execErrState: Error
+    for: 5m
+    annotations:
+      summary: '{{ $labels.mountpoint }} is over 90% full'
+    labels:
+      severity: critical
+      component: docker
+    isPaused: false
